@@ -1,0 +1,5 @@
+{
+  "name": "CafeSync",
+  "description": "A premium full-stack cafe management suite featuring real-time orders, billing, inventory, and reservation management with advanced analytics.",
+  "requestFramePermissions": []
+}
