@@ -32,8 +32,8 @@ export default function App() {
         const res = await fetch(`${API_BASE_URL}/api/health`);
         const data = await res.json();
         setHealth(data);
-      } catch (err) {
-        setError('Cannot connect to Backend Server. Please wait...');
+      } catch (err: any) {
+        setError(`Cannot connect to Backend at ${API_BASE_URL}. Error: ${err.message}`);
       }
     };
     checkHealth();

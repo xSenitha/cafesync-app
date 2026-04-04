@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CafeSync</string>
+    <string name="title_activity_main">CafeSync</string>
+    <string name="package_name">com.cafesync.app</string>
+    <string name="custom_url_scheme">com.cafesync.app</string>
+</resources>
