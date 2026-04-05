@@ -200,80 +200,83 @@ export default function App() {
           />
         )}
 
-        {user && viewMode === 'customer' && (
-          <CustomerView 
-            menuItems={menuItems} 
-            cart={cart} setCart={setCart} 
-            selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
-            selectedTable={selectedTable} setSelectedTable={setSelectedTable}
-            onPlaceOrder={handlePlaceOrder}
-          />
-        )}
-
-        {user && viewMode === 'admin' && (
+        {user && (
           <div className="flex flex-col lg:flex-row gap-8 relative">
-            <Sidebar 
-              isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}
-              activeTab={activeTab} setActiveTab={setActiveTab}
-              orders={orders}
-              onSignOut={() => { setUser(null); setToken(null); setActiveTab('auth'); setIsSidebarOpen(false); }}
-            />
+            {/* Sidebar is always available on mobile, but hidden on desktop in customer view */}
+            <div className={viewMode === 'customer' ? 'lg:hidden' : ''}>
+              <Sidebar 
+                isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}
+                activeTab={activeTab} setActiveTab={setActiveTab}
+                orders={orders}
+                onSignOut={() => { setUser(null); setToken(null); setActiveTab('auth'); setIsSidebarOpen(false); }}
+              />
+            </div>
 
             <div className="flex-1 min-w-0">
-              <AnimatePresence mode="wait">
-                <motion.div 
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-8"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-3xl font-black text-stone-800 capitalize">{activeTab}</h2>
-                      <p className="text-stone-400 text-sm font-medium mt-1">
-                        {activeTab === 'dashboard' && 'Welcome back! Here is what is happening today.'}
-                        {activeTab === 'orders' && 'Manage incoming and active customer orders.'}
-                        {activeTab === 'menu' && 'Update your cafe menu and inventory items.'}
-                        {activeTab === 'reservations' && 'Track table bookings and guest schedules.'}
-                        {activeTab === 'payments' && 'Monitor transactions and financial records.'}
-                        {activeTab === 'staff' && 'Manage your team members and roles.'}
-                        {activeTab === 'feedback' && 'Read and respond to customer reviews.'}
-                        {activeTab === 'about' && 'Learn more about CafeSync and the development team.'}
-                      </p>
-                    </div>
-                    {activeTab !== 'dashboard' && activeTab !== 'about' && (
-                      <button 
-                        onClick={() => { if (activeTab === 'menu') setShowAddItemModal(true); }}
-                        className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-900/10 active:scale-95"
-                      >
-                        <Plus size={20} strokeWidth={2.5} />
-                        Add New
-                      </button>
-                    )}
-                  </div>
-
-                  {activeTab === 'dashboard' && <Dashboard payments={payments} orders={orders} reservations={reservations} menuItems={menuItems} setActiveTab={setActiveTab} />}
-                  {activeTab === 'menu' && <MenuManagement menuItems={menuItems} />}
-                  {activeTab === 'orders' && <OrderManagement orders={orders} />}
-                  {activeTab === 'about' && <About />}
-                  
-                  {(activeTab === 'reservations' || activeTab === 'payments' || activeTab === 'staff' || activeTab === 'feedback') && (
-                    <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
-                      <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
-                        {activeTab === 'reservations' && <Calendar size={40} />}
-                        {activeTab === 'payments' && <CreditCard size={40} />}
-                        {activeTab === 'staff' && <Users size={40} />}
-                        {activeTab === 'feedback' && <MessageSquare size={40} />}
+              {viewMode === 'customer' ? (
+                <CustomerView 
+                  menuItems={menuItems} 
+                  cart={cart} setCart={setCart} 
+                  selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
+                  selectedTable={selectedTable} setSelectedTable={setSelectedTable}
+                  onPlaceOrder={handlePlaceOrder}
+                />
+              ) : (
+                <AnimatePresence mode="wait">
+                  <motion.div 
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-8"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h2 className="text-3xl font-black text-stone-800 capitalize">{activeTab}</h2>
+                        <p className="text-stone-400 text-sm font-medium mt-1">
+                          {activeTab === 'dashboard' && 'Welcome back! Here is what is happening today.'}
+                          {activeTab === 'orders' && 'Manage incoming and active customer orders.'}
+                          {activeTab === 'menu' && 'Update your cafe menu and inventory items.'}
+                          {activeTab === 'reservations' && 'Track table bookings and guest schedules.'}
+                          {activeTab === 'payments' && 'Monitor transactions and financial records.'}
+                          {activeTab === 'staff' && 'Manage your team members and roles.'}
+                          {activeTab === 'feedback' && 'Read and respond to customer reviews.'}
+                          {activeTab === 'about' && 'Learn more about CafeSync and the development team.'}
+                        </p>
                       </div>
-                      <h3 className="text-xl font-black text-stone-800">Module Ready for Integration</h3>
-                      <p className="text-stone-400 text-sm mt-2 max-w-md mx-auto">
-                        This module is fully configured in the backend. Connect your React Native components to the <code>/api/{activeTab}</code> endpoint to start managing data.
-                      </p>
+                      {activeTab !== 'dashboard' && activeTab !== 'about' && (
+                        <button 
+                          onClick={() => { if (activeTab === 'menu') setShowAddItemModal(true); }}
+                          className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-900/10 active:scale-95"
+                        >
+                          <Plus size={20} strokeWidth={2.5} />
+                          Add New
+                        </button>
+                      )}
                     </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
+
+                    {activeTab === 'dashboard' && <Dashboard payments={payments} orders={orders} reservations={reservations} menuItems={menuItems} setActiveTab={setActiveTab} />}
+                    {activeTab === 'menu' && <MenuManagement menuItems={menuItems} />}
+                    {activeTab === 'orders' && <OrderManagement orders={orders} />}
+                    {activeTab === 'about' && <About />}
+                    
+                    {(activeTab === 'reservations' || activeTab === 'payments' || activeTab === 'staff' || activeTab === 'feedback') && (
+                      <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
+                        <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
+                          {activeTab === 'reservations' && <Calendar size={40} />}
+                          {activeTab === 'payments' && <CreditCard size={40} />}
+                          {activeTab === 'staff' && <Users size={40} />}
+                          {activeTab === 'feedback' && <MessageSquare size={40} />}
+                        </div>
+                        <h3 className="text-xl font-black text-stone-800">Module Ready for Integration</h3>
+                        <p className="text-stone-400 text-sm mt-2 max-w-md mx-auto">
+                          This module is fully configured in the backend. Connect your React Native components to the <code>/api/{activeTab}</code> endpoint to start managing data.
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              )}
             </div>
           </div>
         )}
