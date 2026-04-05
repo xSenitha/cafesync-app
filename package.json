@@ -25,7 +25,7 @@
     "dotenv": "^17.4.0",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.3",
-    "lucide-react": "^0.546.0",
+    "lucide-react": "^0.477.0",
     "mongoose": "^9.3.3",
     "motion": "^12.23.24",
     "multer": "^2.1.1",
