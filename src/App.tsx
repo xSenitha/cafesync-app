@@ -10,9 +10,13 @@ import { Sidebar } from './components/admin/Sidebar';
 import { Dashboard } from './components/admin/Dashboard';
 import { OrderManagement } from './components/admin/OrderManagement';
 import { MenuManagement } from './components/admin/MenuManagement';
+import { InventoryManagement } from './components/admin/InventoryManagement';
+import { ReservationManagement } from './components/admin/ReservationManagement';
+import { FeedbackManagement } from './components/admin/FeedbackManagement';
 import { CustomerView } from './components/customer/CustomerView';
 import { AddItemModal } from './components/admin/AddItemModal';
 import { About } from './components/admin/About';
+import { Bell, CheckCircle, Info, AlertTriangle, X } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('auth');
@@ -31,6 +35,8 @@ export default function App() {
   const [orders, setOrders] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
+  const [feedback, setFeedback] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // Customer states
   const [cart, setCart] = useState<any[]>([]);
@@ -84,10 +90,50 @@ export default function App() {
         const data = await res.json();
         setReservations(Array.isArray(data) ? data : []);
       }
+      if (activeTab === 'feedback' || activeTab === 'dashboard') {
+        const res = await fetch(`${API_BASE_URL}/api/feedback`, { headers });
+        const data = await res.json();
+        setFeedback(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
       console.error('Fetch error:', err);
     }
   };
+
+  const playNotification = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    audio.play().catch(e => console.log('Audio play failed:', e));
+  };
+
+  const addNotification = (message: string, type: 'info' | 'success' | 'warning' = 'info') => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, message, type }]);
+    playNotification();
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 5000);
+  };
+
+  // Polling for new orders (Real-time simulation)
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/orders`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > orders.length) {
+          const newOrder = data[0];
+          addNotification(`New Order received! Table ${newOrder.tableNumber}`, 'success');
+          setOrders(data);
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 10000); // Poll every 10 seconds
+    return () => clearInterval(interval);
+  }, [token, orders.length]);
 
   const handleRegister = async () => {
     setLoading(true);
@@ -206,8 +252,10 @@ export default function App() {
             <div className={viewMode === 'customer' ? 'lg:hidden' : ''}>
               <Sidebar 
                 isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen}
-                activeTab={activeTab} setActiveTab={setActiveTab}
+                activeTab={activeTab} 
+                setActiveTab={setActiveTab}
                 orders={orders}
+                user={user}
                 onSignOut={() => { setUser(null); setToken(null); setActiveTab('auth'); setIsSidebarOpen(false); }}
               />
             </div>
@@ -215,7 +263,11 @@ export default function App() {
             <div className="flex-1 min-w-0">
               {viewMode === 'customer' ? (
                 <CustomerView 
+                  activeTab={activeTab}
                   menuItems={menuItems} 
+                  orders={orders}
+                  reservations={reservations}
+                  payments={payments}
                   cart={cart} setCart={setCart} 
                   selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
                   selectedTable={selectedTable} setSelectedTable={setSelectedTable}
@@ -256,17 +308,18 @@ export default function App() {
                     </div>
 
                     {activeTab === 'dashboard' && <Dashboard payments={payments} orders={orders} reservations={reservations} menuItems={menuItems} setActiveTab={setActiveTab} />}
-                    {activeTab === 'menu' && <MenuManagement menuItems={menuItems} />}
-                    {activeTab === 'orders' && <OrderManagement orders={orders} />}
+                    {activeTab === 'menu' && <MenuManagement menuItems={menuItems} token={token} onUpdateMenu={fetchData} />}
+                    {activeTab === 'orders' && <OrderManagement orders={orders} token={token} onUpdateOrder={fetchData} />}
+                    {activeTab === 'inventory' && <InventoryManagement menuItems={menuItems} token={token} onUpdate={fetchData} />}
+                    {activeTab === 'reservations' && <ReservationManagement reservations={reservations} token={token} onUpdate={fetchData} />}
+                    {activeTab === 'feedback' && <FeedbackManagement feedback={feedback} />}
                     {activeTab === 'about' && <About />}
                     
-                    {(activeTab === 'reservations' || activeTab === 'payments' || activeTab === 'staff' || activeTab === 'feedback') && (
+                    {(activeTab === 'payments' || activeTab === 'staff') && (
                       <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
                         <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
-                          {activeTab === 'reservations' && <Calendar size={40} />}
                           {activeTab === 'payments' && <CreditCard size={40} />}
                           {activeTab === 'staff' && <Users size={40} />}
-                          {activeTab === 'feedback' && <MessageSquare size={40} />}
                         </div>
                         <h3 className="text-xl font-black text-stone-800">Module Ready for Integration</h3>
                         <p className="text-stone-400 text-sm mt-2 max-w-md mx-auto">
@@ -283,6 +336,39 @@ export default function App() {
 
         <AddItemModal isOpen={showAddItemModal} onClose={() => setShowAddItemModal(false)} />
       </main>
+
+      {/* Notifications Toast */}
+      <div className="fixed bottom-6 right-6 z-[100] space-y-3">
+        <AnimatePresence>
+          {notifications.map((n) => (
+            <motion.div
+              key={n.id}
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              className={`flex items-center gap-4 p-4 rounded-2xl shadow-2xl border min-w-[300px] ${
+                n.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
+                n.type === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-800' :
+                'bg-white border-stone-100 text-stone-800'
+              }`}
+            >
+              <div className={`p-2 rounded-xl ${
+                n.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                n.type === 'warning' ? 'bg-amber-100 text-amber-600' :
+                'bg-stone-100 text-stone-600'
+              }`}>
+                {n.type === 'success' ? <CheckCircle size={20} /> :
+                 n.type === 'warning' ? <AlertTriangle size={20} /> :
+                 <Info size={20} />}
+              </div>
+              <p className="flex-1 text-sm font-bold">{n.message}</p>
+              <button onClick={() => setNotifications(prev => prev.filter(notif => notif.id !== n.id))} className="p-1 hover:bg-black/5 rounded-lg transition-colors">
+                <X size={16} />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

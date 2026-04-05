@@ -1,11 +1,29 @@
 import { motion } from 'motion/react';
 import { Coffee, Trash2 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 interface MenuManagementProps {
   menuItems: any[];
+  token: string | null;
+  onUpdateMenu: () => void;
 }
 
-export function MenuManagement({ menuItems }: MenuManagementProps) {
+export function MenuManagement({ menuItems, token, onUpdateMenu }: MenuManagementProps) {
+  const handleDelete = async (itemId: string) => {
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/menu/${itemId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        onUpdateMenu();
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
       {menuItems.map((item: any) => (
@@ -33,10 +51,13 @@ export function MenuManagement({ menuItems }: MenuManagementProps) {
           <p className="text-xs text-stone-400 font-medium line-clamp-2 mb-4 h-8">{item.description}</p>
           <div className="flex items-center justify-between pt-4 border-t border-stone-50">
             <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${item.stockQuantity > 5 ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+              <div className={`w-2 h-2 rounded-full ${item.stockQuantity > (item.lowStockThreshold || 10) ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
               <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">{item.stockQuantity} in stock</span>
             </div>
-            <button className="text-stone-400 hover:text-red-500 transition-colors">
+            <button 
+              onClick={() => handleDelete(item._id)}
+              className="text-stone-400 hover:text-red-500 transition-colors"
+            >
               <Trash2 size={18} />
             </button>
           </div>

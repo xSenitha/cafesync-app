@@ -1,4 +1,4 @@
-import { ShoppingCart, Calendar, Coffee, TrendingUp, Users, Clock, Plus, Utensils } from 'lucide-react';
+import { ShoppingCart, Calendar, Coffee, TrendingUp, Users, Clock, Plus, Utensils, AlertTriangle, Box } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { StatCard, TeamMember, QuickAction } from '../ui/DashboardUI';
 
@@ -11,6 +11,8 @@ interface DashboardProps {
 }
 
 export function Dashboard({ payments, orders, reservations, menuItems, setActiveTab }: DashboardProps) {
+  const lowStockItems = menuItems.filter(item => item.stockQuantity <= (item.lowStockThreshold || 10));
+
   return (
     <div className="space-y-8">
       {/* Stats Grid */}
@@ -20,6 +22,28 @@ export function Dashboard({ payments, orders, reservations, menuItems, setActive
         <StatCard label="Reservations" value={reservations.filter(r => r.status === 'Confirmed').length} icon={<Calendar size={20} />} color="bg-blue-500" />
         <StatCard label="Menu Items" value={menuItems.length} icon={<Coffee size={20} />} color="bg-purple-500" />
       </div>
+
+      {lowStockItems.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-[2.5rem] p-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
+              <AlertTriangle size={24} />
+            </div>
+            <div>
+              <h3 className="text-amber-900 font-black">Inventory Alert</h3>
+              <p className="text-amber-700 text-sm font-medium">
+                {lowStockItems.length} items are running low on stock.
+              </p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setActiveTab('inventory')}
+            className="bg-amber-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-amber-700 transition-all shadow-lg shadow-amber-600/20"
+          >
+            Manage Stock
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-8">
         {/* Revenue Chart */}

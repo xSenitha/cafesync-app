@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { LayoutDashboard, ShoppingCart, Coffee, Calendar, CreditCard, Users, MessageSquare, LogOut, Info } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Coffee, Calendar, CreditCard, Users, MessageSquare, LogOut, Info, Box } from 'lucide-react';
 import { NavItem } from '../ui/DashboardUI';
 
 interface SidebarProps {
@@ -8,10 +8,11 @@ interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   orders: any[];
+  user: any;
   onSignOut: () => void;
 }
 
-export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveTab, orders, onSignOut }: SidebarProps) {
+export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveTab, orders, user, onSignOut }: SidebarProps) {
   return (
     <>
       <AnimatePresence>
@@ -43,6 +44,9 @@ export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveT
           </div>
           <NavItem icon={<ShoppingCart size={20} />} label="Orders" active={activeTab === 'orders'} onClick={() => { setActiveTab('orders'); setIsSidebarOpen(false); }} badge={orders.filter(o => o.status === 'Pending').length} />
           <NavItem icon={<Coffee size={20} />} label="Menu" active={activeTab === 'menu'} onClick={() => { setActiveTab('menu'); setIsSidebarOpen(false); }} />
+          {user?.role === 'admin' && (
+            <NavItem icon={<Box size={20} />} label="Inventory" active={activeTab === 'inventory'} onClick={() => { setActiveTab('inventory'); setIsSidebarOpen(false); }} />
+          )}
           <NavItem icon={<Calendar size={20} />} label="Reservations" active={activeTab === 'reservations'} onClick={() => { setActiveTab('reservations'); setIsSidebarOpen(false); }} />
           <NavItem icon={<CreditCard size={20} />} label="Payments" active={activeTab === 'payments'} onClick={() => { setActiveTab('payments'); setIsSidebarOpen(false); }} />
           
