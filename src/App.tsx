@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Coffee, ShoppingCart, CreditCard, Calendar, User, LogIn, Plus, 
   CheckCircle, LayoutDashboard, Users, MessageSquare, TrendingUp,
-  Clock, AlertCircle, ChevronRight, LogOut, Search, Filter, Trash2
+  Clock, AlertCircle, ChevronRight, LogOut, Search, Filter, Trash2,
+  Menu, X
 } from 'lucide-react';
 import { API_BASE_URL } from './config';
 
@@ -14,6 +15,8 @@ export default function App() {
   const [health, setHealth] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Data states
   const [menuItems, setMenuItems] = useState<any[]>([]);
@@ -22,9 +25,9 @@ export default function App() {
   const [reservations, setReservations] = useState<any[]>([]);
 
   // Form states
-  const [email, setEmail] = useState('admin@cafesync.com');
-  const [password, setPassword] = useState('password123');
-  const [name, setName] = useState('Admin User');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -76,6 +79,7 @@ export default function App() {
   const handleRegister = async () => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
@@ -83,16 +87,18 @@ export default function App() {
         body: JSON.stringify({ name, email, password, role: 'admin' })
       });
       const data = await res.json();
-      if (res.ok && data.token) {
-        setToken(data.token);
-        setUser(data.user);
-        setActiveTab('dashboard');
+      if (res.ok) {
+        setSuccess('Account created successfully! Please sign in with your credentials.');
+        // Clear form
+        setName('');
+        setEmail('');
+        setPassword('');
       } else {
         setError(data.message || 'Registration failed');
       }
     } catch (err: any) {
       console.error('Registration Error:', err);
-      setError(`Connection Error: ${err.message || 'Check if Backend is running and MongoDB Atlas IP is allowed (0.0.0.0/0)'}`);
+      setError(`Connection Error: ${err.message || 'Check if Backend is running'}`);
     } finally {
       setLoading(false);
     }
@@ -101,6 +107,7 @@ export default function App() {
   const handleLogin = async () => {
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
@@ -128,6 +135,14 @@ export default function App() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-stone-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-3">
+          {user && (
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="lg:hidden p-2 hover:bg-stone-100 rounded-xl text-stone-600 transition-colors"
+            >
+              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          )}
           <div className="bg-gradient-to-br from-amber-700 to-amber-900 p-2.5 rounded-xl text-white shadow-lg shadow-amber-900/20">
             <Coffee size={22} strokeWidth={2.5} />
           </div>
@@ -190,6 +205,17 @@ export default function App() {
                 </motion.div>
               )}
 
+              {success && (
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-bold rounded-2xl flex items-center gap-3"
+                >
+                  <CheckCircle size={18} />
+                  {success}
+                </motion.div>
+              )}
+
               <div className="space-y-5">
                 <div className="group">
                   <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
@@ -197,7 +223,7 @@ export default function App() {
                     type="text" 
                     value={name} 
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
+                    placeholder="Your Name"
                     className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium"
                   />
                 </div>
@@ -207,7 +233,7 @@ export default function App() {
                     type="email" 
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@cafesync.com"
+                    placeholder="Your Email"
                     className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium"
                   />
                 </div>
@@ -243,28 +269,50 @@ export default function App() {
         )}
 
         {user && (
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col lg:flex-row gap-8 relative">
+            {/* Sidebar Overlay for Mobile */}
+            <AnimatePresence>
+              {isSidebarOpen && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="fixed inset-0 bg-stone-900/20 backdrop-blur-sm z-40 lg:hidden"
+                />
+              )}
+            </AnimatePresence>
+
             {/* Navigation Sidebar */}
-            <aside className="lg:w-64 flex-shrink-0">
+            <motion.aside 
+              initial={false}
+              animate={{ 
+                x: isSidebarOpen ? 0 : -300,
+                opacity: isSidebarOpen ? 1 : 0,
+                width: isSidebarOpen ? '256px' : '0px'
+              }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className={`fixed lg:relative lg:translate-x-0 lg:opacity-100 lg:w-64 z-50 lg:z-0 bg-white lg:bg-transparent h-[calc(100vh-80px)] lg:h-auto top-20 lg:top-0 left-0 p-6 lg:p-0 border-r lg:border-r-0 border-stone-100 overflow-hidden flex-shrink-0`}
+            >
               <nav className="space-y-1.5 sticky top-24">
-                <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+                <NavItem icon={<LayoutDashboard size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }} />
                 <div className="pt-6 pb-2 px-4">
                   <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Operations</p>
                 </div>
-                <NavItem icon={<ShoppingCart size={20} />} label="Orders" active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} badge={orders.filter(o => o.status === 'Pending').length} />
-                <NavItem icon={<Coffee size={20} />} label="Menu" active={activeTab === 'menu'} onClick={() => setActiveTab('menu')} />
-                <NavItem icon={<Calendar size={20} />} label="Reservations" active={activeTab === 'reservations'} onClick={() => setActiveTab('reservations')} />
-                <NavItem icon={<CreditCard size={20} />} label="Payments" active={activeTab === 'payments'} onClick={() => setActiveTab('payments')} />
+                <NavItem icon={<ShoppingCart size={20} />} label="Orders" active={activeTab === 'orders'} onClick={() => { setActiveTab('orders'); setIsSidebarOpen(false); }} badge={orders.filter(o => o.status === 'Pending').length} />
+                <NavItem icon={<Coffee size={20} />} label="Menu" active={activeTab === 'menu'} onClick={() => { setActiveTab('menu'); setIsSidebarOpen(false); }} />
+                <NavItem icon={<Calendar size={20} />} label="Reservations" active={activeTab === 'reservations'} onClick={() => { setActiveTab('reservations'); setIsSidebarOpen(false); }} />
+                <NavItem icon={<CreditCard size={20} />} label="Payments" active={activeTab === 'payments'} onClick={() => { setActiveTab('payments'); setIsSidebarOpen(false); }} />
                 
                 <div className="pt-6 pb-2 px-4">
                   <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Management</p>
                 </div>
-                <NavItem icon={<Users size={20} />} label="Staff" active={activeTab === 'staff'} onClick={() => setActiveTab('staff')} />
-                <NavItem icon={<MessageSquare size={20} />} label="Feedback" active={activeTab === 'feedback'} onClick={() => setActiveTab('feedback')} />
+                <NavItem icon={<Users size={20} />} label="Staff" active={activeTab === 'staff'} onClick={() => { setActiveTab('staff'); setIsSidebarOpen(false); }} />
+                <NavItem icon={<MessageSquare size={20} />} label="Feedback" active={activeTab === 'feedback'} onClick={() => { setActiveTab('feedback'); setIsSidebarOpen(false); }} />
                 
                 <div className="pt-10">
                   <button 
-                    onClick={() => { setUser(null); setToken(null); setActiveTab('auth'); }}
+                    onClick={() => { setUser(null); setToken(null); setActiveTab('auth'); setIsSidebarOpen(false); }}
                     className="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all group"
                   >
                     <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
@@ -272,7 +320,7 @@ export default function App() {
                   </button>
                 </div>
               </nav>
-            </aside>
+            </motion.aside>
 
             {/* Main Content */}
             <div className="flex-1 min-w-0">

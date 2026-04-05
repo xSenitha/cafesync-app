@@ -1,4 +1,3 @@
-// capacitor.config.ts
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -6,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'CafeSync',
   webDir: 'dist',
   server: {
-    androidScheme: 'https' 
+    androidScheme: 'https'
   }
 };
 
