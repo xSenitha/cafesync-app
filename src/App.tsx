@@ -355,6 +355,7 @@ export default function App() {
                           {activeTab === 'dashboard' && 'Welcome back! Here is what is happening today.'}
                           {activeTab === 'orders' && 'Manage incoming and active customer orders.'}
                           {activeTab === 'menu' && 'Update your cafe menu and inventory items.'}
+                          {activeTab === 'inventory' && 'Track stock levels and manage supplies.'}
                           {activeTab === 'reservations' && 'Track table bookings and guest schedules.'}
                           {activeTab === 'payments' && 'Monitor transactions and financial records.'}
                           {activeTab === 'staff' && 'Manage your team members and roles.'}
@@ -364,7 +365,7 @@ export default function App() {
                       </div>
                       {activeTab !== 'dashboard' && activeTab !== 'about' && activeTab !== 'staff' && (
                         <button 
-                          onClick={() => { if (activeTab === 'menu') setShowAddItemModal(true); }}
+                          onClick={() => { if (activeTab === 'menu' || activeTab === 'inventory') setShowAddItemModal(true); }}
                           className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-900/10 active:scale-95"
                         >
                           <Plus size={20} strokeWidth={2.5} />

@@ -81,6 +81,20 @@ router.put('/:id', protect, adminOnly, upload.single('image'), async (req: any, 
   }
 });
 
+// @route   PATCH /api/menu/:id
+// @desc    Partially update a menu item (Admin only)
+router.patch('/:id', protect, adminOnly, async (req: any, res: any) => {
+  try {
+    const updatedItem = await MenuItem.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
+    if (!updatedItem) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+    res.json(updatedItem);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // @route   DELETE /api/menu/:id
 // @desc    Delete a menu item (Admin only)
 router.delete('/:id', protect, adminOnly, async (req, res) => {

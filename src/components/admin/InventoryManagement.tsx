@@ -11,7 +11,7 @@ interface InventoryManagementProps {
 export function InventoryManagement({ menuItems, token, onUpdate }: InventoryManagementProps) {
   const lowStockItems = menuItems.filter(item => item.stockQuantity <= (item.lowStockThreshold || 10));
 
-  const updateStock = async (itemId: string, newQuantity: number) => {
+  const updateField = async (itemId: string, field: string, value: any) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/menu/${itemId}`, {
         method: 'PATCH',
@@ -19,25 +19,18 @@ export function InventoryManagement({ menuItems, token, onUpdate }: InventoryMan
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ stockQuantity: newQuantity })
+        body: JSON.stringify({ [field]: value })
       });
       if (res.ok) {
         onUpdate();
       }
     } catch (err) {
-      console.error('Update stock error:', err);
+      console.error(`Update ${field} error:`, err);
     }
   };
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-black text-stone-800">Inventory Management</h2>
-          <p className="text-stone-400 text-sm font-medium mt-1">Track stock levels and manage supplies.</p>
-        </div>
-      </div>
-
       {lowStockItems.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-3xl p-6 flex items-start gap-4">
           <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
@@ -57,11 +50,11 @@ export function InventoryManagement({ menuItems, token, onUpdate }: InventoryMan
           <motion.div
             layout
             key={item._id}
-            className="bg-white rounded-[2.5rem] border border-stone-100 p-6 shadow-sm flex flex-col"
+            className="bg-white rounded-[2.5rem] border border-stone-100 p-6 shadow-sm flex flex-col hover:shadow-xl hover:shadow-stone-200/50 transition-all group"
           >
             <div className="flex justify-between items-start mb-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-stone-50 rounded-2xl flex items-center justify-center text-stone-400">
+                <div className="w-12 h-12 bg-stone-50 rounded-2xl flex items-center justify-center text-stone-400 group-hover:bg-amber-50 group-hover:text-amber-600 transition-colors">
                   <Box size={24} />
                 </div>
                 <div>
@@ -78,8 +71,8 @@ export function InventoryManagement({ menuItems, token, onUpdate }: InventoryMan
 
             <div className="flex items-center justify-between bg-stone-50 p-4 rounded-2xl">
               <button 
-                onClick={() => updateStock(item._id, Math.max(0, item.stockQuantity - 1))}
-                className="p-2 bg-white border border-stone-100 rounded-xl text-stone-600 hover:bg-stone-50 transition-all shadow-sm"
+                onClick={() => updateField(item._id, 'stockQuantity', Math.max(0, item.stockQuantity - 1))}
+                className="p-2 bg-white border border-stone-100 rounded-xl text-stone-600 hover:bg-stone-50 transition-all shadow-sm active:scale-90"
               >
                 <Minus size={18} />
               </button>
@@ -88,8 +81,8 @@ export function InventoryManagement({ menuItems, token, onUpdate }: InventoryMan
                 <p className="text-xl font-black text-stone-800">{item.stockQuantity}</p>
               </div>
               <button 
-                onClick={() => updateStock(item._id, item.stockQuantity + 1)}
-                className="p-2 bg-white border border-stone-100 rounded-xl text-stone-600 hover:bg-stone-50 transition-all shadow-sm"
+                onClick={() => updateField(item._id, 'stockQuantity', item.stockQuantity + 1)}
+                className="p-2 bg-white border border-stone-100 rounded-xl text-stone-600 hover:bg-stone-50 transition-all shadow-sm active:scale-90"
               >
                 <Plus size={18} />
               </button>
@@ -97,11 +90,33 @@ export function InventoryManagement({ menuItems, token, onUpdate }: InventoryMan
 
             <div className="mt-6 pt-6 border-t border-stone-50 flex justify-between items-center">
               <div>
-                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Threshold</p>
-                <p className="text-sm font-bold text-stone-600">{item.lowStockThreshold || 10}</p>
+                <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Low Stock Threshold</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-stone-600">{item.lowStockThreshold || 10}</p>
+                  <button 
+                    onClick={() => {
+                      const newThreshold = prompt('Enter new low stock threshold:', (item.lowStockThreshold || 10).toString());
+                      if (newThreshold && !isNaN(parseInt(newThreshold))) {
+                        updateField(item._id, 'lowStockThreshold', parseInt(newThreshold));
+                      }
+                    }}
+                    className="p-1 hover:bg-stone-100 rounded-lg text-stone-400 hover:text-amber-600 transition-all"
+                    title="Change Threshold"
+                  >
+                    <RefreshCw size={14} />
+                  </button>
+                </div>
               </div>
-              <button className="text-amber-600 hover:text-amber-700 transition-colors">
-                <RefreshCw size={18} />
+              <button 
+                onClick={() => {
+                  const amount = prompt('Enter amount to add to stock:', '50');
+                  if (amount && !isNaN(parseInt(amount))) {
+                    updateField(item._id, 'stockQuantity', item.stockQuantity + parseInt(amount));
+                  }
+                }}
+                className="bg-stone-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-900/10"
+              >
+                Restock
               </button>
             </div>
           </motion.div>
