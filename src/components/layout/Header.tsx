@@ -31,7 +31,7 @@ export function Header({ user, health, isSidebarOpen, setIsSidebarOpen, viewMode
       </div>
       
       <div className="flex items-center gap-2 sm:gap-6">
-        {user && (user.role === 'admin' || user.role === 'staff') && (
+        {user && (user.role === 'admin' || user.role === 'manager' || user.role === 'staff') && (
           <button 
             onClick={() => setViewMode(viewMode === 'admin' ? 'customer' : 'admin')}
             className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider text-stone-600 transition-all"

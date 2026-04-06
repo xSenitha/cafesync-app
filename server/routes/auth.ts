@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.ts';
+import { protect, adminOnly, managerOrAbove } from '../middleware/auth.ts';
 
 const router = express.Router();
 
@@ -70,10 +71,16 @@ router.post('/login', async (req: any, res: any) => {
 });
 
 // @route   GET /api/auth/users
-// @desc    Get all users (Admin only)
-router.get('/users', async (req: any, res: any) => {
+// @desc    Get all users (Manager or Admin only)
+router.get('/users', protect, managerOrAbove, async (req: any, res: any) => {
   try {
-    const users = await User.find().select('-password');
+    let users;
+    if (req.user.role === 'admin') {
+      users = await User.find().select('-password');
+    } else {
+      // Managers can only see staff and customers
+      users = await User.find({ role: { $in: ['staff', 'customer'] } }).select('-password');
+    }
     res.json(users);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -82,7 +89,7 @@ router.get('/users', async (req: any, res: any) => {
 
 // @route   DELETE /api/auth/users/:id
 // @desc    Delete a user (Admin only)
-router.delete('/users/:id', async (req: any, res: any) => {
+router.delete('/users/:id', protect, adminOnly, async (req: any, res: any) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ message: 'User deleted' });
@@ -92,12 +99,35 @@ router.delete('/users/:id', async (req: any, res: any) => {
 });
 
 // @route   PUT /api/auth/users/:id
-// @desc    Update user role (Admin only)
-router.put('/users/:id', async (req: any, res: any) => {
+// @desc    Update user role (Manager or Admin only)
+router.put('/users/:id', protect, managerOrAbove, async (req: any, res: any) => {
   try {
     const { role } = req.body;
-    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
-    res.json(user);
+    const targetUser = await User.findById(req.params.id);
+    
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Role management rules:
+    // 1. Admin can change roles of everyone
+    // 2. Manager can only change roles of Staff and Members (customer)
+    // 3. Manager cannot change Admin roles
+    
+    if (req.user.role === 'manager') {
+      if (targetUser.role === 'admin') {
+        return res.status(403).json({ message: 'Managers cannot change Admin roles' });
+      }
+      if (!['staff', 'customer'].includes(role)) {
+        return res.status(403).json({ message: 'Managers can only assign Staff or Member roles' });
+      }
+    }
+
+    targetUser.role = role;
+    await targetUser.save();
+    
+    const updatedUser = await User.findById(targetUser._id).select('-password');
+    res.json(updatedUser);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }

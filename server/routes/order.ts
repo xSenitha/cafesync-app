@@ -1,7 +1,7 @@
 import express from 'express';
 import Order from '../models/Order.ts';
 import MenuItem from '../models/MenuItem.ts';
-import { protect } from '../middleware/auth.ts';
+import { protect, staffOrAbove } from '../middleware/auth.ts';
 
 const router = express.Router();
 
@@ -10,8 +10,8 @@ const router = express.Router();
 router.get('/', protect, async (req: any, res) => {
   try {
     let query = {};
-    // Only admin and staff can see all orders. Others see only their own.
-    if (req.user.role !== 'admin' && req.user.role !== 'staff') {
+    // Only admin, manager and staff can see all orders. Others see only their own.
+    if (!['admin', 'manager', 'staff'].includes(req.user.role)) {
       query = { user: req.user._id };
     }
     const orders = await Order.find(query).populate('items.menuItem').sort({ createdAt: -1 });
@@ -54,11 +54,26 @@ router.post('/', protect, async (req: any, res) => {
 
 // @route   PUT /api/orders/:id
 // @desc    Update order status
-router.put('/:id', protect, async (req, res) => {
+router.put('/:id', protect, staffOrAbove, async (req, res) => {
   try {
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
       { status: req.body.status },
+      { new: true }
+    );
+    res.json(updatedOrder);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// @route   PATCH /api/orders/:id
+// @desc    Partially update order status
+router.patch('/:id', protect, staffOrAbove, async (req, res) => {
+  try {
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
       { new: true }
     );
     res.json(updatedOrder);

@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import MenuItem from '../models/MenuItem.ts';
-import { protect, adminOnly } from '../middleware/auth.ts';
+import { protect, adminOnly, managerOrAbove } from '../middleware/auth.ts';
 
 const router = express.Router();
 
@@ -41,8 +41,8 @@ router.get('/', async (req, res) => {
 });
 
 // @route   POST /api/menu
-// @desc    Add a menu item (Admin only)
-router.post('/', protect, adminOnly, upload.single('image'), async (req: any, res: any) => {
+// @desc    Add a menu item (Manager or Admin only)
+router.post('/', protect, managerOrAbove, upload.single('image'), async (req: any, res: any) => {
   try {
     const { name, description, price, category, stockQuantity, imageUrl: bodyImageUrl } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : (bodyImageUrl || '');
@@ -64,8 +64,8 @@ router.post('/', protect, adminOnly, upload.single('image'), async (req: any, re
 });
 
 // @route   PUT /api/menu/:id
-// @desc    Update a menu item (Admin only)
-router.put('/:id', protect, adminOnly, upload.single('image'), async (req: any, res: any) => {
+// @desc    Update a menu item (Manager or Admin only)
+router.put('/:id', protect, managerOrAbove, upload.single('image'), async (req: any, res: any) => {
   try {
     const updateData = { ...req.body };
     if (req.file) {
@@ -82,8 +82,8 @@ router.put('/:id', protect, adminOnly, upload.single('image'), async (req: any, 
 });
 
 // @route   PATCH /api/menu/:id
-// @desc    Partially update a menu item (Admin only)
-router.patch('/:id', protect, adminOnly, async (req: any, res: any) => {
+// @desc    Partially update a menu item (Manager or Admin only)
+router.patch('/:id', protect, managerOrAbove, async (req: any, res: any) => {
   try {
     const updatedItem = await MenuItem.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
     if (!updatedItem) {
@@ -96,8 +96,8 @@ router.patch('/:id', protect, adminOnly, async (req: any, res: any) => {
 });
 
 // @route   DELETE /api/menu/:id
-// @desc    Delete a menu item (Admin only)
-router.delete('/:id', protect, adminOnly, async (req, res) => {
+// @desc    Delete a menu item (Manager or Admin only)
+router.delete('/:id', protect, managerOrAbove, async (req, res) => {
   try {
     await MenuItem.findByIdAndDelete(req.params.id);
     res.json({ message: 'Item deleted' });

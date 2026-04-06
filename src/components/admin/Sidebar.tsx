@@ -54,7 +54,7 @@ export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveT
           {viewMode !== 'customer' && (
             <NavItem icon={<Coffee size={20} />} label="Menu" active={activeTab === 'menu'} onClick={() => { setActiveTab('menu'); setIsSidebarOpen(false); }} />
           )}
-          {user?.role === 'admin' && (
+          {viewMode !== 'customer' && (user?.role === 'admin' || user?.role === 'manager') && (
             <NavItem icon={<Box size={20} />} label="Inventory" active={activeTab === 'inventory'} onClick={() => { setActiveTab('inventory'); setIsSidebarOpen(false); }} />
           )}
           <NavItem icon={<Calendar size={20} />} label="Reservations" active={activeTab === 'reservations'} onClick={() => { setActiveTab('reservations'); setIsSidebarOpen(false); }} badge={reservations.filter(r => r.status === 'Pending').length} />
@@ -63,8 +63,12 @@ export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveT
           <div className="pt-6 pb-2 px-4">
             <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Management</p>
           </div>
-          <NavItem icon={<Users size={20} />} label="Staff" active={activeTab === 'staff'} onClick={() => { setActiveTab('staff'); setIsSidebarOpen(false); }} />
-          <NavItem icon={<MessageSquare size={20} />} label="Feedback" active={activeTab === 'feedback'} onClick={() => { setActiveTab('feedback'); setIsSidebarOpen(false); }} />
+          {viewMode !== 'customer' && (user?.role === 'admin' || user?.role === 'manager') && (
+            <NavItem icon={<Users size={20} />} label="Staff" active={activeTab === 'staff'} onClick={() => { setActiveTab('staff'); setIsSidebarOpen(false); }} />
+          )}
+          {viewMode !== 'customer' && (
+            <NavItem icon={<MessageSquare size={20} />} label="Feedback" active={activeTab === 'feedback'} onClick={() => { setActiveTab('feedback'); setIsSidebarOpen(false); }} />
+          )}
           <NavItem icon={<Info size={20} />} label="About" active={activeTab === 'about'} onClick={() => { setActiveTab('about'); setIsSidebarOpen(false); }} />
           
           <div className="pt-10">

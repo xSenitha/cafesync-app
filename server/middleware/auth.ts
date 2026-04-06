@@ -31,3 +31,19 @@ export const adminOnly = (req: any, res: any, next: any) => {
     res.status(403).json({ message: 'Not authorized as an admin' });
   }
 };
+
+export const managerOrAbove = (req: any, res: any, next: any) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'manager')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Not authorized as a manager or admin' });
+  }
+};
+
+export const staffOrAbove = (req: any, res: any, next: any) => {
+  if (req.user && ['admin', 'manager', 'staff'].includes(req.user.role)) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Not authorized as staff or above' });
+  }
+};

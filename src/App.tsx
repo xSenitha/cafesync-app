@@ -358,7 +358,7 @@ export default function App() {
                           {activeTab === 'inventory' && 'Track stock levels and manage supplies.'}
                           {activeTab === 'reservations' && 'Track table bookings and guest schedules.'}
                           {activeTab === 'payments' && 'Monitor transactions and financial records.'}
-                          {activeTab === 'staff' && 'Manage your team members and roles.'}
+                          {activeTab === 'staff' && 'Manage your team members, roles, and permissions.'}
                           {activeTab === 'feedback' && 'Read and respond to customer reviews.'}
                           {activeTab === 'about' && 'Learn more about CafeSync and the development team.'}
                         </p>
@@ -379,7 +379,7 @@ export default function App() {
                     {activeTab === 'orders' && <OrderManagement orders={orders} token={token} onUpdateOrder={fetchData} />}
                     {activeTab === 'inventory' && <InventoryManagement menuItems={menuItems} token={token} onUpdate={fetchData} />}
                     {activeTab === 'reservations' && <ReservationManagement reservations={reservations} token={token} onUpdate={fetchData} />}
-                    {activeTab === 'staff' && <StaffManagement token={token} />}
+                    {activeTab === 'staff' && <StaffManagement token={token} currentUser={user} />}
                     {activeTab === 'feedback' && <FeedbackManagement feedback={feedback} />}
                     {activeTab === 'about' && <About />}
                     

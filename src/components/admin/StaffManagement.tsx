@@ -4,9 +4,10 @@ import { API_BASE_URL } from '../../config';
 
 interface StaffManagementProps {
   token: string | null;
+  currentUser: any;
 }
 
-export function StaffManagement({ token }: StaffManagementProps) {
+export function StaffManagement({ token, currentUser }: StaffManagementProps) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +69,26 @@ export function StaffManagement({ token }: StaffManagementProps) {
     }
   };
 
+  const canManageUser = (targetUser: any) => {
+    if (currentUser?.role === 'admin') return true;
+    if (currentUser?.role === 'manager') {
+      // Managers can only manage staff and customers
+      return targetUser.role === 'staff' || targetUser.role === 'customer';
+    }
+    return false;
+  };
+
+  const getAvailableRoles = (targetUser: any) => {
+    if (currentUser?.role === 'admin') {
+      return ['customer', 'staff', 'manager', 'admin'];
+    }
+    if (currentUser?.role === 'manager') {
+      // Managers can only assign staff or customer roles
+      return ['customer', 'staff'];
+    }
+    return [targetUser.role];
+  };
+
   if (loading) return <div className="p-12 text-center text-stone-400">Loading staff...</div>;
 
   return (
@@ -91,7 +112,9 @@ export function StaffManagement({ token }: StaffManagementProps) {
                       <div className="bg-stone-100 p-2 rounded-xl text-stone-600">
                         <User size={18} />
                       </div>
-                      <p className="text-sm font-black text-stone-800">{u.name}</p>
+                      <p className="text-sm font-black text-stone-800">
+                        {u.name} {u._id === currentUser?.id && <span className="text-[8px] bg-stone-800 text-white px-1.5 py-0.5 rounded ml-1 uppercase">You</span>}
+                      </p>
                     </div>
                   </td>
                   <td className="px-6 py-4">
@@ -104,28 +127,34 @@ export function StaffManagement({ token }: StaffManagementProps) {
                     <div className="flex items-center gap-2">
                       <select 
                         value={u.role}
+                        disabled={!canManageUser(u) || u._id === currentUser?.id}
                         onChange={(e) => updateRole(u._id, e.target.value)}
-                        className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer ${
+                        className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer disabled:cursor-not-allowed ${
                           u.role === 'admin' ? 'bg-amber-100 text-amber-700' :
+                          u.role === 'manager' ? 'bg-purple-100 text-purple-700' :
                           u.role === 'staff' ? 'bg-blue-100 text-blue-700' :
                           'bg-stone-100 text-stone-700'
                         }`}
                       >
-                        <option value="customer">Customer</option>
-                        <option value="staff">Staff</option>
-                        <option value="admin">Admin</option>
+                        {getAvailableRoles(u).map(role => (
+                          <option key={role} value={role}>{role === 'customer' ? 'Member' : role}</option>
+                        ))}
                       </select>
-                      {u.role === 'admin' ? <ShieldCheck size={14} className="text-amber-500" /> : <Shield size={14} className="text-stone-300" />}
+                      {u.role === 'admin' ? <ShieldCheck size={14} className="text-amber-500" /> : 
+                       u.role === 'manager' ? <ShieldAlert size={14} className="text-purple-500" /> :
+                       <Shield size={14} className="text-stone-300" />}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => deleteUser(u._id)}
-                      className="p-2 hover:bg-red-50 text-red-400 rounded-xl transition-colors"
-                      title="Remove Member"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    {canManageUser(u) && u._id !== currentUser?.id && (
+                      <button 
+                        onClick={() => deleteUser(u._id)}
+                        className="p-2 hover:bg-red-50 text-red-400 rounded-xl transition-colors"
+                        title="Remove Member"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
