@@ -248,7 +248,7 @@ export default function App() {
         setViewMode={setViewMode} 
       />
 
-      <main className="max-w-7xl mx-auto p-4 sm:p-8">
+      <main className="max-w-7xl mx-auto p-3 sm:p-8">
         {activeTab === 'auth' && !user && (
           <Auth 
             name={name} setName={setName}

@@ -16,49 +16,49 @@ export function Dashboard({ payments, orders, reservations, menuItems, setActive
   return (
     <div className="space-y-8">
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Sales" value={`Rs. ${payments.reduce((acc, p) => acc + p.amount, 0).toLocaleString()}`} icon={<TrendingUp size={20} />} color="bg-emerald-500" />
-        <StatCard label="Active Orders" value={orders.filter(o => o.status !== 'Paid' && o.status !== 'Cancelled').length} icon={<ShoppingCart size={20} />} color="bg-amber-500" />
-        <StatCard label="Reservations" value={reservations.filter(r => r.status === 'Confirmed').length} icon={<Calendar size={20} />} color="bg-blue-500" />
-        <StatCard label="Menu Items" value={menuItems.length} icon={<Coffee size={20} />} color="bg-purple-500" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <StatCard label="Total Sales" value={`Rs. ${payments.reduce((acc, p) => acc + p.amount, 0).toLocaleString()}`} icon={<TrendingUp size={18} className="sm:w-5 sm:h-5" />} color="bg-emerald-500" />
+        <StatCard label="Orders" value={orders.filter(o => o.status !== 'Paid' && o.status !== 'Cancelled').length} icon={<ShoppingCart size={18} className="sm:w-5 sm:h-5" />} color="bg-amber-500" />
+        <StatCard label="Booking" value={reservations.filter(r => r.status === 'Confirmed').length} icon={<Calendar size={18} className="sm:w-5 sm:h-5" />} color="bg-blue-500" />
+        <StatCard label="Menu" value={menuItems.length} icon={<Coffee size={18} className="sm:w-5 sm:h-5" />} color="bg-purple-500" />
       </div>
 
       {lowStockItems.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-[2.5rem] p-6 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="bg-amber-100 p-3 rounded-2xl text-amber-600">
-              <AlertTriangle size={24} />
+        <div className="bg-amber-50 border border-amber-200 rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="bg-amber-100 p-2 sm:p-3 rounded-xl sm:rounded-2xl text-amber-600">
+              <AlertTriangle size={20} className="sm:w-6 sm:h-6" />
             </div>
             <div>
-              <h3 className="text-amber-900 font-black">Inventory Alert</h3>
-              <p className="text-amber-700 text-sm font-medium">
-                {lowStockItems.length} items are running low on stock.
+              <h3 className="text-amber-900 font-black text-sm sm:text-base">Inventory Alert</h3>
+              <p className="text-amber-700 text-xs sm:text-sm font-medium">
+                {lowStockItems.length} items are running low.
               </p>
             </div>
           </div>
           <button 
             onClick={() => setActiveTab('inventory')}
-            className="bg-amber-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-amber-700 transition-all shadow-lg shadow-amber-600/20"
+            className="w-full sm:w-auto bg-amber-600 text-white px-6 py-2.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider hover:bg-amber-700 transition-all shadow-lg shadow-amber-600/20"
           >
             Manage Stock
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 gap-6 sm:gap-8">
         {/* Revenue Chart */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-stone-100 shadow-sm">
-          <div className="flex items-center justify-between mb-8">
+        <div className="bg-white p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-stone-100 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
             <div>
-              <h3 className="text-xl font-black text-stone-800">Revenue Overview</h3>
-              <p className="text-stone-400 text-xs font-medium mt-1">Daily earnings for the past week</p>
+              <h3 className="text-lg sm:text-xl font-black text-stone-800">Revenue Overview</h3>
+              <p className="text-stone-400 text-[10px] sm:text-xs font-medium mt-1">Daily earnings for the past week</p>
             </div>
-            <div className="flex items-center gap-2 bg-stone-50 p-1 rounded-xl border border-stone-100">
-              <button className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider bg-white text-stone-800 rounded-lg shadow-sm border border-stone-100">Weekly</button>
-              <button className="px-4 py-1.5 text-[10px] font-black uppercase tracking-wider text-stone-400 hover:text-stone-600 transition-colors">Monthly</button>
+            <div className="flex items-center gap-2 bg-stone-50 p-1 rounded-xl border border-stone-100 w-fit">
+              <button className="px-3 sm:px-4 py-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-white text-stone-800 rounded-lg shadow-sm border border-stone-100">Weekly</button>
+              <button className="px-3 sm:px-4 py-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-stone-400 hover:text-stone-600 transition-colors">Monthly</button>
             </div>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[200px] sm:h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={payments.slice(-7).map((p, i) => ({ name: `Day ${i+1}`, value: p.amount }))}>
                 <defs>

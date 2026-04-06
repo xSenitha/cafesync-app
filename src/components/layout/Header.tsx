@@ -11,8 +11,8 @@ interface HeaderProps {
 
 export function Header({ user, health, isSidebarOpen, setIsSidebarOpen, viewMode, setViewMode }: HeaderProps) {
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-stone-100 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-      <div className="flex items-center gap-3">
+    <header className="bg-white/80 backdrop-blur-md border-b border-stone-100 px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center sticky top-0 z-50">
+      <div className="flex items-center gap-2 sm:gap-3">
         {user && (
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -21,33 +21,34 @@ export function Header({ user, health, isSidebarOpen, setIsSidebarOpen, viewMode
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         )}
-        <div className="bg-gradient-to-br from-amber-700 to-amber-900 p-2.5 rounded-xl text-white shadow-lg shadow-amber-900/20">
-          <Coffee size={22} strokeWidth={2.5} />
+        <div className="bg-gradient-to-br from-amber-700 to-amber-900 p-2 sm:p-2.5 rounded-xl text-white shadow-lg shadow-amber-900/20">
+          <Coffee size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
         </div>
-        <div>
-          <h1 className="text-xl font-black tracking-tight text-stone-800 leading-none">CafeSync</h1>
-          <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-1">Management Suite</p>
+        <div className="hidden xs:block">
+          <h1 className="text-lg sm:text-xl font-black tracking-tight text-stone-800 leading-none">CafeSync</h1>
+          <p className="text-[9px] sm:text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-1">Management Suite</p>
         </div>
       </div>
       
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 sm:gap-6">
         {user && (
           <button 
             onClick={() => setViewMode(viewMode === 'admin' ? 'customer' : 'admin')}
-            className="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-xl text-xs font-black uppercase tracking-wider text-stone-600 transition-all"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider text-stone-600 transition-all"
+            title={viewMode === 'admin' ? 'Switch to Customer View' : 'Switch to Admin View'}
           >
             <Monitor size={14} />
-            {viewMode === 'admin' ? 'Customer View' : 'Admin View'}
+            <span className="hidden xs:inline">{viewMode === 'admin' ? 'Customer View' : 'Admin View'}</span>
           </button>
         )}
         {health && (
-          <div className="hidden sm:flex flex-col items-end">
+          <div className="flex flex-col items-end">
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-              <span className="text-[10px] font-bold uppercase text-stone-400 tracking-wider">System Live</span>
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${health.database === 'Connected' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase text-stone-400 tracking-wider hidden sm:inline">System Live</span>
             </div>
-            <span className={`text-[9px] font-black uppercase ${health.database === 'Connected' ? 'text-emerald-600' : 'text-red-500'}`}>
-              DB: {health.database}
+            <span className={`text-[8px] sm:text-[9px] font-black uppercase ${health.database === 'Connected' ? 'text-emerald-600' : 'text-red-500'}`}>
+              {health.database === 'Connected' ? 'Online' : 'Offline'}
             </span>
           </div>
         )}

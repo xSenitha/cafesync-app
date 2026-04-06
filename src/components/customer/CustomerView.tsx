@@ -61,42 +61,42 @@ export function CustomerView({
       case 'menu':
       case 'dashboard':
         return (
-          <div className="flex flex-col lg:flex-row gap-8">
-            <div className="flex-1 space-y-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
+            <div className="flex-1 space-y-6 sm:space-y-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
                 <div>
-                  <h2 className="text-3xl font-black text-stone-800">Fresh Menu</h2>
-                  <p className="text-stone-400 text-sm font-medium mt-1">Select your favorite items and place an order.</p>
+                  <h2 className="text-2xl sm:text-3xl font-black text-stone-800">Fresh Menu</h2>
+                  <p className="text-stone-400 text-xs sm:text-sm font-medium mt-1">Select your favorite items and place an order.</p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 sm:gap-4">
                   <button 
                     onClick={() => setShowReservationForm(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-amber-50 hover:bg-amber-100 rounded-xl text-xs font-black uppercase tracking-wider text-amber-700 transition-all border border-amber-100"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-2 bg-amber-50 hover:bg-amber-100 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-700 transition-all border border-amber-100"
                   >
                     <Calendar size={14} />
-                    Book a Table
+                    Book Table
                   </button>
-                  <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-stone-100 shadow-sm">
-                    <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-2">Table</label>
+                  <div className="flex-1 sm:flex-none flex items-center gap-2 sm:gap-4 bg-white p-1.5 sm:p-2 rounded-2xl border border-stone-100 shadow-sm">
+                    <label className="text-[9px] sm:text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1 sm:ml-2">Table</label>
                     <select 
                       value={selectedTable || ''} 
                       onChange={(e) => setSelectedTable(Number(e.target.value))}
-                      className="bg-stone-50 px-4 py-2 rounded-xl text-xs font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="bg-stone-50 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-auto"
                     >
                       <option value="">Select</option>
-                      {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>Table {n}</option>)}
+                      {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>T-{n}</option>)}
                     </select>
                   </div>
                 </div>
               </div>
 
               {/* Categories */}
-              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
                 {categories.map(cat => (
                   <button
                     key={cat as string}
                     onClick={() => setSelectedCategory(cat as string)}
-                    className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                    className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                       selectedCategory === cat 
                         ? 'bg-stone-900 text-white shadow-xl shadow-stone-900/10' 
                         : 'bg-white text-stone-400 hover:bg-stone-50 border border-stone-100'
@@ -108,32 +108,32 @@ export function CustomerView({
               </div>
 
               {/* Menu Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                 {filteredItems.map((item: any) => (
                   <motion.div 
                     layout
                     key={item._id}
-                    className="bg-white p-5 rounded-[2.5rem] border border-stone-100 shadow-sm hover:shadow-xl hover:shadow-stone-200/50 transition-all group"
+                    className="bg-white p-4 sm:p-5 rounded-[2rem] sm:rounded-[2.5rem] border border-stone-100 shadow-sm hover:shadow-xl hover:shadow-stone-200/50 transition-all group"
                   >
-                    <div className="relative h-48 mb-4 overflow-hidden rounded-2xl bg-stone-100">
+                    <div className="relative h-32 sm:h-48 mb-3 sm:mb-4 overflow-hidden rounded-xl sm:rounded-2xl bg-stone-100">
                       {item.imageUrl ? (
                         <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-stone-300">
-                          <Coffee size={48} strokeWidth={1.5} />
+                          <Coffee size={32} className="sm:w-12 sm:h-12" strokeWidth={1.5} />
                         </div>
                       )}
                     </div>
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-lg font-black text-stone-800">{item.name}</h3>
-                      <p className="text-lg font-black text-amber-700">Rs. {item.price}</p>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 sm:mb-2">
+                      <h3 className="text-sm sm:text-lg font-black text-stone-800 truncate">{item.name}</h3>
+                      <p className="text-sm sm:text-lg font-black text-amber-700">Rs. {item.price}</p>
                     </div>
-                    <p className="text-xs text-stone-400 font-medium line-clamp-2 mb-6 h-8">{item.description}</p>
+                    <p className="text-[10px] sm:text-xs text-stone-400 font-medium line-clamp-2 mb-4 sm:mb-6 h-6 sm:h-8">{item.description}</p>
                     <button 
                       onClick={() => addToCart(item)}
-                      className="w-full bg-stone-50 text-stone-800 font-bold py-3 rounded-2xl hover:bg-stone-900 hover:text-white transition-all flex items-center justify-center gap-2 group/btn"
+                      className="w-full bg-stone-50 text-stone-800 text-xs sm:text-base font-bold py-2.5 sm:py-3 rounded-xl sm:rounded-2xl hover:bg-stone-900 hover:text-white transition-all flex items-center justify-center gap-2 group/btn"
                     >
-                      <Plus size={18} className="group-hover/btn:rotate-90 transition-transform" />
+                      <Plus size={16} className="sm:w-[18px] sm:h-[18px] group-hover/btn:rotate-90 transition-transform" />
                       Add to Order
                     </button>
                   </motion.div>
@@ -143,12 +143,12 @@ export function CustomerView({
 
             {/* Cart Sidebar */}
             <div className="lg:w-80 flex-shrink-0">
-              <div className="bg-white p-8 rounded-[2.5rem] border border-stone-100 shadow-sm sticky top-24">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="bg-amber-100 p-2.5 rounded-xl text-amber-700">
-                    <ShoppingCart size={20} />
+              <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-stone-100 shadow-sm lg:sticky lg:top-24">
+                <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                  <div className="bg-amber-100 p-2 sm:p-2.5 rounded-xl text-amber-700">
+                    <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
                   </div>
-                  <h3 className="text-xl font-black text-stone-800">Your Order</h3>
+                  <h3 className="text-lg sm:text-xl font-black text-stone-800">Your Order</h3>
                 </div>
 
                 <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
