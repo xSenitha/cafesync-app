@@ -226,9 +226,11 @@ export default function App() {
       if (res.ok) {
         setCart([]);
         setSuccess('Order placed successfully!');
-        fetchData();
+        setActiveTab('orders');
+        // fetchData will be triggered by activeTab change effect
       } else {
-        setError('Failed to place order');
+        const data = await res.json();
+        setError(data.message || 'Failed to place order');
       }
     } catch (err) {
       setError('Connection error while placing order');
@@ -289,6 +291,7 @@ export default function App() {
                   onPlaceOrder={handlePlaceOrder}
                   token={token}
                   onUpdate={fetchData}
+                  loading={loading}
                 />
               ) : (
                 <AnimatePresence mode="wait">

@@ -20,12 +20,13 @@ interface CustomerViewProps {
   onPlaceOrder: () => void;
   token: string | null;
   onUpdate: () => void;
+  loading: boolean;
 }
 
 export function CustomerView({ 
   activeTab, menuItems, orders, reservations, payments, cart, setCart, 
   selectedCategory, setSelectedCategory, selectedTable, setSelectedTable, onPlaceOrder,
-  token, onUpdate
+  token, onUpdate, loading
 }: CustomerViewProps) {
   const [showFeedbackForm, setShowFeedbackForm] = useState<string | null>(null);
   const [showReservationForm, setShowReservationForm] = useState(false);
@@ -188,9 +189,10 @@ export function CustomerView({
                     </div>
                     <button 
                       onClick={onPlaceOrder}
-                      className="w-full bg-stone-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-xl shadow-stone-900/10 active:scale-95 flex items-center justify-center gap-2"
+                      disabled={loading}
+                      className="w-full bg-stone-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-xl shadow-stone-900/10 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      Place Order
+                      {loading ? 'Placing Order...' : 'Place Order'}
                       <ChevronRight size={18} />
                     </button>
                   </div>
