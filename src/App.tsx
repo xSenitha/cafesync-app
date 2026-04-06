@@ -115,38 +115,54 @@ export default function App() {
     }, 5000);
   };
 
-  // Polling for new orders and status changes (Real-time simulation)
+  // Polling for new orders, status changes, and inventory updates (Real-time simulation)
   useEffect(() => {
     if (!token) return;
     const interval = setInterval(async () => {
+      const headers = { 'Authorization': `Bearer ${token}` };
       try {
-        const res = await fetch(`${API_BASE_URL}/api/orders`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          // Check for new orders
-          if (data.length > orders.length) {
-            const newOrder = data[0];
+        // Fetch Orders
+        const ordersRes = await fetch(`${API_BASE_URL}/api/orders`, { headers });
+        const ordersData = await ordersRes.json();
+        if (Array.isArray(ordersData)) {
+          // Check for new orders (only for admin)
+          if (viewMode === 'admin' && ordersData.length > orders.length) {
+            const newOrder = ordersData[0];
             addNotification(`New Order received! Table ${newOrder.tableNumber}`, 'success');
           }
           
           // Check for status changes in existing orders
-          data.forEach(newOrder => {
+          ordersData.forEach(newOrder => {
             const oldOrder = orders.find(o => o._id === newOrder._id);
             if (oldOrder && oldOrder.status !== newOrder.status) {
               addNotification(`Order #${newOrder._id.slice(-6).toUpperCase()} status updated to ${newOrder.status}`, 'info');
             }
           });
 
-          setOrders(data);
+          setOrders(ordersData);
+        }
+
+        // Fetch Menu (Inventory)
+        const menuRes = await fetch(`${API_BASE_URL}/api/menu`, { headers });
+        const menuData = await menuRes.json();
+        if (Array.isArray(menuData)) {
+          // Check for low stock notifications (only for admin)
+          if (viewMode === 'admin') {
+            menuData.forEach(newItem => {
+              const oldItem = menuItems.find(i => i._id === newItem._id);
+              if (oldItem && newItem.stockQuantity <= (newItem.lowStockThreshold || 10) && oldItem.stockQuantity > (newItem.lowStockThreshold || 10)) {
+                addNotification(`Low stock alert: ${newItem.name} (${newItem.stockQuantity} left)`, 'warning');
+              }
+            });
+          }
+          setMenuItems(menuData);
         }
       } catch (err) {
         console.error('Polling error:', err);
       }
     }, 5000); // Poll every 5 seconds for better "real-time" feel
     return () => clearInterval(interval);
-  }, [token, orders]);
+  }, [token, orders, menuItems, viewMode]);
 
   const handleRegister = async () => {
     setLoading(true);
@@ -201,7 +217,7 @@ export default function App() {
 
   const handlePlaceOrder = async () => {
     if (!selectedTable) {
-      setError('Please select a table number first');
+      addNotification('Please select a table number first', 'warning');
       return;
     }
     setLoading(true);
@@ -225,12 +241,12 @@ export default function App() {
       });
       if (res.ok) {
         setCart([]);
-        setSuccess('Order placed successfully!');
+        addNotification('Order placed successfully!', 'success');
         setActiveTab('orders');
         // fetchData will be triggered by activeTab change effect
       } else {
         const data = await res.json();
-        setError(data.message || 'Failed to place order');
+        addNotification(data.message || 'Failed to place order', 'warning');
       }
     } catch (err) {
       setError('Connection error while placing order');
@@ -292,6 +308,7 @@ export default function App() {
                   token={token}
                   onUpdate={fetchData}
                   loading={loading}
+                  addNotification={addNotification}
                 />
               ) : (
                 <AnimatePresence mode="wait">

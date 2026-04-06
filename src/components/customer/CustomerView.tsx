@@ -21,12 +21,13 @@ interface CustomerViewProps {
   token: string | null;
   onUpdate: () => void;
   loading: boolean;
+  addNotification: (message: string, type: 'info' | 'success' | 'warning') => void;
 }
 
 export function CustomerView({ 
   activeTab, menuItems, orders, reservations, payments, cart, setCart, 
   selectedCategory, setSelectedCategory, selectedTable, setSelectedTable, onPlaceOrder,
-  token, onUpdate, loading
+  token, onUpdate, loading, addNotification
 }: CustomerViewProps) {
   const [showFeedbackForm, setShowFeedbackForm] = useState<string | null>(null);
   const [showReservationForm, setShowReservationForm] = useState(false);
@@ -39,10 +40,19 @@ export function CustomerView({
   const addToCart = (item: any) => {
     const existing = cart.find((c: any) => c._id === item._id);
     if (existing) {
+      if (existing.quantity >= item.stockQuantity) {
+        addNotification(`Only ${item.stockQuantity} items available in stock`, 'warning');
+        return;
+      }
       setCart(cart.map((c: any) => c._id === item._id ? { ...c, quantity: c.quantity + 1 } : c));
     } else {
+      if (item.stockQuantity <= 0) {
+        addNotification(`Item out of stock`, 'warning');
+        return;
+      }
       setCart([...cart, { ...item, quantity: 1 }]);
     }
+    addNotification(`${item.name} added to cart`, 'success');
   };
 
   const removeFromCart = (itemId: string) => {
@@ -77,7 +87,7 @@ export function CustomerView({
                     <Calendar size={14} />
                     Book Table
                   </button>
-                  <div className="flex-1 sm:flex-none flex items-center gap-2 sm:gap-4 bg-white p-1.5 sm:p-2 rounded-2xl border border-stone-100 shadow-sm">
+                  <div className={`flex-1 sm:flex-none flex items-center gap-2 sm:gap-4 bg-white p-1.5 sm:p-2 rounded-2xl border ${!selectedTable ? 'border-amber-500 animate-pulse' : 'border-stone-100'} shadow-sm`}>
                     <label className="text-[9px] sm:text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1 sm:ml-2">Table</label>
                     <select 
                       value={selectedTable || ''} 
@@ -129,13 +139,21 @@ export function CustomerView({
                       <h3 className="text-sm sm:text-lg font-black text-stone-800 truncate">{item.name}</h3>
                       <p className="text-sm sm:text-lg font-black text-amber-700">Rs. {item.price}</p>
                     </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                        item.stockQuantity <= (item.lowStockThreshold || 10) ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        Stock: {item.stockQuantity}
+                      </span>
+                    </div>
                     <p className="text-[10px] sm:text-xs text-stone-400 font-medium line-clamp-2 mb-4 sm:mb-6 h-6 sm:h-8">{item.description}</p>
                     <button 
                       onClick={() => addToCart(item)}
-                      className="w-full bg-stone-50 text-stone-800 text-xs sm:text-base font-bold py-2.5 sm:py-3 rounded-xl sm:rounded-2xl hover:bg-stone-900 hover:text-white transition-all flex items-center justify-center gap-2 group/btn"
+                      disabled={item.stockQuantity <= 0}
+                      className="w-full bg-stone-50 text-stone-800 text-xs sm:text-base font-bold py-2.5 sm:py-3 rounded-xl sm:rounded-2xl hover:bg-stone-900 hover:text-white transition-all flex items-center justify-center gap-2 group/btn disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Plus size={16} className="sm:w-[18px] sm:h-[18px] group-hover/btn:rotate-90 transition-transform" />
-                      Add to Order
+                      {item.stockQuantity <= 0 ? 'Out of Stock' : 'Add to Order'}
                     </button>
                   </motion.div>
                 ))}
@@ -165,7 +183,10 @@ export function CustomerView({
                       <div key={item._id} className="flex items-center justify-between group">
                         <div className="flex-1">
                           <p className="text-sm font-bold text-stone-800">{item.name}</p>
-                          <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Rs. {item.price * item.quantity}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Rs. {item.price * item.quantity}</p>
+                            <span className="text-[9px] font-bold text-stone-400">({item.stockQuantity} Left)</span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-3 bg-stone-50 p-1.5 rounded-xl border border-stone-100">
                           <button onClick={() => removeFromCart(item._id)} className="p-1 hover:bg-white hover:shadow-sm rounded-lg transition-all text-stone-400 hover:text-stone-900">
@@ -206,7 +227,7 @@ export function CustomerView({
         return (
           <div className="space-y-8">
             <div>
-              <h2 className="text-3xl font-black text-stone-800">My Orders</h2>
+              <h2 className="text-3xl font-black text-stone-800">Order History</h2>
               <p className="text-stone-400 text-sm font-medium mt-1">Track your active and past orders.</p>
             </div>
             <div className="grid grid-cols-1 gap-4">
