@@ -16,7 +16,11 @@ router.post('/register', async (req: any, res: any) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    user = new User({ name, email, password, role });
+    // First user is admin, others are customers by default
+    const userCount = await User.countDocuments();
+    const finalRole = userCount === 0 ? 'admin' : (role || 'customer');
+
+    user = new User({ name, email, password, role: finalRole });
     await user.save();
 
     const token = jwt.sign(

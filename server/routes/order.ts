@@ -10,7 +10,8 @@ const router = express.Router();
 router.get('/', protect, async (req: any, res) => {
   try {
     let query = {};
-    if (req.user.role === 'customer') {
+    // Only admin and staff can see all orders. Others see only their own.
+    if (req.user.role !== 'admin' && req.user.role !== 'staff') {
       query = { user: req.user._id };
     }
     const orders = await Order.find(query).populate('items.menuItem').sort({ createdAt: -1 });
