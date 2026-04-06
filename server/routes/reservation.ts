@@ -6,9 +6,13 @@ const router = express.Router();
 
 // @route   GET /api/reservations
 // @desc    Get all reservations
-router.get('/', protect, async (req, res) => {
+router.get('/', protect, async (req: any, res) => {
   try {
-    const reservations = await Reservation.find();
+    let query = {};
+    if (req.user.role === 'customer') {
+      query = { user: req.user._id };
+    }
+    const reservations = await Reservation.find(query).sort({ reservationTime: 1 });
     res.json(reservations);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
@@ -17,9 +21,18 @@ router.get('/', protect, async (req, res) => {
 
 // @route   POST /api/reservations
 // @desc    Create a reservation
-router.post('/', async (req, res) => {
+router.post('/', protect, async (req: any, res) => {
   try {
-    const newReservation = new Reservation(req.body);
+    const { customerName, customerPhone, tableNumber, numberOfGuests, reservationTime, notes } = req.body;
+    const newReservation = new Reservation({
+      user: req.user._id,
+      customerName,
+      customerPhone,
+      tableNumber,
+      numberOfGuests,
+      reservationTime,
+      notes
+    });
     await newReservation.save();
     res.status(201).json(newReservation);
   } catch (err: any) {

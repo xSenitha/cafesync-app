@@ -268,6 +268,7 @@ export function CustomerView({
                 orderId={showFeedbackForm} 
                 onClose={() => setShowFeedbackForm(null)} 
                 onSuccess={onUpdate} 
+                token={token}
               />
             )}
             {selectedOrderForPayment && (
@@ -341,7 +342,11 @@ export function CustomerView({
             <ReservationForm 
               isOpen={showReservationForm}
               onClose={() => setShowReservationForm(false)}
-              onSuccess={() => {}}
+              onSuccess={() => {
+                onUpdate();
+                setShowReservationForm(false);
+              }}
+              token={token}
             />
           </div>
         );

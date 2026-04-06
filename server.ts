@@ -19,6 +19,7 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Models for Seeding
+import User from './server/models/User.ts';
 import MenuItem from './server/models/MenuItem.ts';
 import Order from './server/models/Order.ts';
 import Payment from './server/models/Payment.ts';
@@ -27,52 +28,75 @@ import Reservation from './server/models/Reservation.ts';
 // Seed Data Function
 const seedData = async () => {
   try {
-    const menuCount = await MenuItem.countDocuments();
-    if (menuCount === 0) {
-      console.log('🌱 Seeding initial data...');
-      const items = await MenuItem.insertMany([
-        { name: 'Cappuccino', price: 450, category: 'Beverage', description: 'Rich espresso with steamed milk foam', stockQuantity: 50 },
-        { name: 'Chocolate Cake', price: 650, category: 'Dessert', description: 'Decadent dark chocolate layer cake', stockQuantity: 15 },
-        { name: 'Club Sandwich', price: 850, category: 'Snack', description: 'Classic triple-decker with chicken and egg', stockQuantity: 20 },
-        { name: 'Iced Latte', price: 500, category: 'Beverage', description: 'Chilled espresso with cold milk', stockQuantity: 40 },
-        { name: 'Blueberry Muffin', price: 350, category: 'Dessert', description: 'Freshly baked with real blueberries', stockQuantity: 12 }
-      ]);
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      console.log('🌱 Seeding initial users...');
+      const admin = new User({
+        name: 'Admin User',
+        email: 'admin@cafesync.com',
+        password: 'admin123',
+        role: 'admin'
+      });
+      await admin.save();
 
-      const order1 = await new Order({
-        customerName: 'Saman Kumara',
-        tableNumber: 5,
-        items: [{ menuItem: items[0]._id, quantity: 2, price: 450 }],
-        totalAmount: 900,
-        status: 'Paid',
-        orderType: 'Dine-in'
-      }).save();
+      const customer = new User({
+        name: 'Saman Kumara',
+        email: 'saman@example.com',
+        password: 'user123',
+        role: 'customer'
+      });
+      await customer.save();
 
-      await new Payment({
-        orderId: order1._id,
-        amount: 900,
-        paymentMethod: 'Cash',
-        status: 'Completed'
-      }).save();
+      const menuCount = await MenuItem.countDocuments();
+      if (menuCount === 0) {
+        console.log('🌱 Seeding initial menu items...');
+        const items = await MenuItem.insertMany([
+          { name: 'Cappuccino', price: 450, category: 'Beverage', description: 'Rich espresso with steamed milk foam', stockQuantity: 50 },
+          { name: 'Chocolate Cake', price: 650, category: 'Dessert', description: 'Decadent dark chocolate layer cake', stockQuantity: 15 },
+          { name: 'Club Sandwich', price: 850, category: 'Snack', description: 'Classic triple-decker with chicken and egg', stockQuantity: 20 },
+          { name: 'Iced Latte', price: 500, category: 'Beverage', description: 'Chilled espresso with cold milk', stockQuantity: 40 },
+          { name: 'Blueberry Muffin', price: 350, category: 'Dessert', description: 'Freshly baked with real blueberries', stockQuantity: 12 }
+        ]);
 
-      const order2 = await new Order({
-        customerName: 'Nimali Perera',
-        tableNumber: 3,
-        items: [{ menuItem: items[2]._id, quantity: 1, price: 850 }],
-        totalAmount: 850,
-        status: 'Pending',
-        orderType: 'Dine-in'
-      }).save();
+        const order1 = await new Order({
+          user: customer._id,
+          customerName: customer.name,
+          tableNumber: 5,
+          items: [{ menuItem: items[0]._id, quantity: 2, price: 450 }],
+          totalAmount: 900,
+          status: 'Paid',
+          orderType: 'Dine-in'
+        }).save();
 
-      await new Reservation({
-        customerName: 'Kasun Kalhara',
-        customerPhone: '0771234567',
-        tableNumber: 10,
-        reservationTime: new Date(Date.now() + 86400000),
-        numberOfGuests: 4,
-        status: 'Confirmed'
-      }).save();
+        await new Payment({
+          orderId: order1._id,
+          amount: 900,
+          paymentMethod: 'Cash',
+          status: 'Completed'
+        }).save();
 
-      console.log('✅ Database Seeded Successfully');
+        await new Order({
+          user: customer._id,
+          customerName: customer.name,
+          tableNumber: 3,
+          items: [{ menuItem: items[2]._id, quantity: 1, price: 850 }],
+          totalAmount: 850,
+          status: 'Pending',
+          orderType: 'Dine-in'
+        }).save();
+
+        await new Reservation({
+          user: customer._id,
+          customerName: customer.name,
+          customerPhone: '0771234567',
+          tableNumber: 10,
+          reservationTime: new Date(Date.now() + 86400000),
+          numberOfGuests: 4,
+          status: 'Confirmed'
+        }).save();
+
+        console.log('✅ Database Seeded Successfully');
+      }
     }
   } catch (err) {
     console.error('❌ Seeding error:', err);

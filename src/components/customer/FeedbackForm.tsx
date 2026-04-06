@@ -7,9 +7,10 @@ interface FeedbackFormProps {
   orderId: string;
   onClose: () => void;
   onSuccess: () => void;
+  token: string | null;
 }
 
-export function FeedbackForm({ orderId, onClose, onSuccess }: FeedbackFormProps) {
+export function FeedbackForm({ orderId, onClose, onSuccess, token }: FeedbackFormProps) {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +21,10 @@ export function FeedbackForm({ orderId, onClose, onSuccess }: FeedbackFormProps)
     try {
       const res = await fetch(`${API_BASE_URL}/api/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ orderId, rating, comment })
       });
       if (res.ok) {

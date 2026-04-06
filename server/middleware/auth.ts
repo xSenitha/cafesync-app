@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/User.ts';
 
-export const protect = (req: any, res: any, next: any) => {
+export const protect = async (req: any, res: any, next: any) => {
   let token;
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
@@ -13,7 +14,10 @@ export const protect = (req: any, res: any, next: any) => {
 
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    req.user = decoded;
+    req.user = await User.findById(decoded.id).select('-password');
+    if (!req.user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
     next();
   } catch (err) {
     res.status(401).json({ message: 'Not authorized, token failed' });

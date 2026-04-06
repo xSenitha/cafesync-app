@@ -11,9 +11,10 @@ interface SidebarProps {
   reservations: any[];
   user: any;
   onSignOut: () => void;
+  viewMode?: 'admin' | 'customer';
 }
 
-export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveTab, orders, reservations, user, onSignOut }: SidebarProps) {
+export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveTab, orders, reservations, user, onSignOut, viewMode }: SidebarProps) {
   return (
     <>
       <AnimatePresence>
@@ -44,7 +45,9 @@ export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveT
             <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Operations</p>
           </div>
           <NavItem icon={<ShoppingCart size={20} />} label="Orders" active={activeTab === 'orders'} onClick={() => { setActiveTab('orders'); setIsSidebarOpen(false); }} badge={orders.filter(o => o.status === 'Pending').length} />
-          <NavItem icon={<Coffee size={20} />} label="Menu" active={activeTab === 'menu'} onClick={() => { setActiveTab('menu'); setIsSidebarOpen(false); }} />
+          {viewMode !== 'customer' && (
+            <NavItem icon={<Coffee size={20} />} label="Menu" active={activeTab === 'menu'} onClick={() => { setActiveTab('menu'); setIsSidebarOpen(false); }} />
+          )}
           {user?.role === 'admin' && (
             <NavItem icon={<Box size={20} />} label="Inventory" active={activeTab === 'inventory'} onClick={() => { setActiveTab('inventory'); setIsSidebarOpen(false); }} />
           )}

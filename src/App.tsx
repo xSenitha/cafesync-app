@@ -271,6 +271,7 @@ export default function App() {
                 reservations={reservations}
                 user={user}
                 onSignOut={() => { setUser(null); setToken(null); setActiveTab('auth'); setIsSidebarOpen(false); }}
+                viewMode={viewMode}
               />
             </div>
 

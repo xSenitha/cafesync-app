@@ -24,25 +24,25 @@ export function Header({ user, health, isSidebarOpen, setIsSidebarOpen, viewMode
         <div className="bg-gradient-to-br from-amber-700 to-amber-900 p-2 sm:p-2.5 rounded-xl text-white shadow-lg shadow-amber-900/20">
           <Coffee size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
         </div>
-        <div className="hidden xs:block">
-          <h1 className="text-lg sm:text-xl font-black tracking-tight text-stone-800 leading-none">CafeSync</h1>
-          <p className="text-[9px] sm:text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-1">Management Suite</p>
+        <div className="flex flex-col">
+          <h1 className="text-base sm:text-xl font-black tracking-tight text-stone-800 leading-none">CafeSync</h1>
+          <p className="text-[8px] sm:text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-0.5 sm:mt-1">Management</p>
         </div>
       </div>
       
-      <div className="flex items-center gap-3 sm:gap-6">
+      <div className="flex items-center gap-2 sm:gap-6">
         {user && (
           <button 
             onClick={() => setViewMode(viewMode === 'admin' ? 'customer' : 'admin')}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider text-stone-600 transition-all"
+            className="flex items-center gap-2 px-2 sm:px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider text-stone-600 transition-all"
             title={viewMode === 'admin' ? 'Switch to Customer View' : 'Switch to Admin View'}
           >
             <Monitor size={14} />
-            <span className="hidden xs:inline">{viewMode === 'admin' ? 'Customer View' : 'Admin View'}</span>
+            <span className="hidden md:inline">{viewMode === 'admin' ? 'Customer View' : 'Admin View'}</span>
           </button>
         )}
         {health && (
-          <div className="flex flex-col items-end">
+          <div className="hidden xs:flex flex-col items-end">
             <div className="flex items-center gap-1.5">
               <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${health.database === 'Connected' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
               <span className="text-[9px] sm:text-[10px] font-bold uppercase text-stone-400 tracking-wider hidden sm:inline">System Live</span>
@@ -53,14 +53,13 @@ export function Header({ user, health, isSidebarOpen, setIsSidebarOpen, viewMode
           </div>
         )}
         {user && (
-          <div className="flex items-center gap-4 pl-6 border-l border-stone-100">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-black text-stone-800 leading-none">{user.name}</p>
-              <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-1">{user.role}</p>
-              <p className="text-[9px] font-medium text-stone-400 mt-0.5">{user.email}</p>
+          <div className="flex items-center gap-2 sm:gap-4 pl-3 sm:pl-6 border-l border-stone-100">
+            <div className="text-right">
+              <p className="text-[10px] sm:text-sm font-black text-stone-800 leading-none truncate max-w-[60px] sm:max-w-none">{user.name.split(' ')[0]}</p>
+              <p className="text-[8px] sm:text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-0.5">{user.role}</p>
             </div>
             <div className="relative group">
-              <div className="w-10 h-10 bg-stone-900 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-stone-900/20 group-hover:scale-105 transition-transform cursor-pointer">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-stone-900 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-lg shadow-stone-900/20 group-hover:scale-105 transition-transform cursor-pointer">
                 {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
               </div>
               <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-stone-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right scale-95 group-hover:scale-100 z-[60]">

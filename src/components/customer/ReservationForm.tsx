@@ -7,9 +7,10 @@ interface ReservationFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  token: string | null;
 }
 
-export function ReservationForm({ isOpen, onClose, onSuccess }: ReservationFormProps) {
+export function ReservationForm({ isOpen, onClose, onSuccess, token }: ReservationFormProps) {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -33,10 +34,17 @@ export function ReservationForm({ isOpen, onClose, onSuccess }: ReservationFormP
       
       const res = await fetch(`${API_BASE_URL}/api/reservations`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
-          ...formData,
-          reservationDate: reservationDateTime
+          customerName: formData.customerName,
+          customerPhone: formData.customerPhone,
+          tableNumber: formData.tableNumber,
+          numberOfGuests: formData.numberOfGuests,
+          reservationTime: reservationDateTime,
+          notes: formData.notes
         })
       });
 
