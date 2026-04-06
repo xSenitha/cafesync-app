@@ -54,7 +54,7 @@ export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveT
           {viewMode !== 'customer' && (
             <NavItem icon={<Coffee size={20} />} label="Menu" active={activeTab === 'menu'} onClick={() => { setActiveTab('menu'); setIsSidebarOpen(false); }} />
           )}
-          {viewMode !== 'customer' && (user?.role === 'admin' || user?.role === 'manager') && (
+          {viewMode !== 'customer' && (user?.role === 'admin' || user?.role === 'manager' || user?.role === 'staff') && (
             <NavItem icon={<Box size={20} />} label="Inventory" active={activeTab === 'inventory'} onClick={() => { setActiveTab('inventory'); setIsSidebarOpen(false); }} />
           )}
           <NavItem icon={<Calendar size={20} />} label="Reservations" active={activeTab === 'reservations'} onClick={() => { setActiveTab('reservations'); setIsSidebarOpen(false); }} badge={reservations.filter(r => r.status === 'Pending').length} />

@@ -62,12 +62,14 @@ export function MenuManagement({ menuItems, token, onUpdateMenu, onEditItem }: M
               >
                 <Edit3 size={18} />
               </button>
-              <button 
-                onClick={() => handleDelete(item._id)}
-                className="text-stone-400 hover:text-red-500 transition-colors"
-              >
-                <Trash2 size={18} />
-              </button>
+              {(token && JSON.parse(atob(token.split('.')[1])).role !== 'staff') && (
+                <button 
+                  onClick={() => handleDelete(item._id)}
+                  className="text-stone-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={18} />
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

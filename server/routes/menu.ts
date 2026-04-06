@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import MenuItem from '../models/MenuItem.ts';
-import { protect, adminOnly, managerOrAbove } from '../middleware/auth.ts';
+import { protect, adminOnly, managerOrAbove, staffOrAbove } from '../middleware/auth.ts';
 
 const router = express.Router();
 
@@ -41,8 +41,8 @@ router.get('/', async (req, res) => {
 });
 
 // @route   POST /api/menu
-// @desc    Add a menu item (Manager or Admin only)
-router.post('/', protect, managerOrAbove, upload.single('image'), async (req: any, res: any) => {
+// @desc    Add a menu item (Staff or Above)
+router.post('/', protect, staffOrAbove, upload.single('image'), async (req: any, res: any) => {
   try {
     const { name, description, price, category, stockQuantity, imageUrl: bodyImageUrl } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : (bodyImageUrl || '');
@@ -64,8 +64,8 @@ router.post('/', protect, managerOrAbove, upload.single('image'), async (req: an
 });
 
 // @route   PUT /api/menu/:id
-// @desc    Update a menu item (Manager or Admin only)
-router.put('/:id', protect, managerOrAbove, upload.single('image'), async (req: any, res: any) => {
+// @desc    Update a menu item (Staff or Above)
+router.put('/:id', protect, staffOrAbove, upload.single('image'), async (req: any, res: any) => {
   try {
     const updateData = { ...req.body };
     if (req.file) {
@@ -82,8 +82,8 @@ router.put('/:id', protect, managerOrAbove, upload.single('image'), async (req: 
 });
 
 // @route   PATCH /api/menu/:id
-// @desc    Partially update a menu item (Manager or Admin only)
-router.patch('/:id', protect, managerOrAbove, async (req: any, res: any) => {
+// @desc    Partially update a menu item (Staff or Above)
+router.patch('/:id', protect, staffOrAbove, async (req: any, res: any) => {
   try {
     const updatedItem = await MenuItem.findByIdAndUpdate(req.params.id, { $set: req.body }, { new: true });
     if (!updatedItem) {
