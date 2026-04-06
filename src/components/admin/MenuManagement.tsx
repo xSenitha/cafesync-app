@@ -1,14 +1,15 @@
 import { motion } from 'motion/react';
-import { Coffee, Trash2 } from 'lucide-react';
+import { Coffee, Trash2, Edit3 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
 interface MenuManagementProps {
   menuItems: any[];
   token: string | null;
   onUpdateMenu: () => void;
+  onEditItem: (item: any) => void;
 }
 
-export function MenuManagement({ menuItems, token, onUpdateMenu }: MenuManagementProps) {
+export function MenuManagement({ menuItems, token, onUpdateMenu, onEditItem }: MenuManagementProps) {
   const handleDelete = async (itemId: string) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     try {
@@ -54,12 +55,20 @@ export function MenuManagement({ menuItems, token, onUpdateMenu }: MenuManagemen
               <div className={`w-2 h-2 rounded-full ${item.stockQuantity > (item.lowStockThreshold || 10) ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
               <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">{item.stockQuantity} in stock</span>
             </div>
-            <button 
-              onClick={() => handleDelete(item._id)}
-              className="text-stone-400 hover:text-red-500 transition-colors"
-            >
-              <Trash2 size={18} />
-            </button>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => onEditItem(item)}
+                className="text-stone-400 hover:text-amber-700 transition-colors"
+              >
+                <Edit3 size={18} />
+              </button>
+              <button 
+                onClick={() => handleDelete(item._id)}
+                className="text-stone-400 hover:text-red-500 transition-colors"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
           </div>
         </motion.div>
       ))}

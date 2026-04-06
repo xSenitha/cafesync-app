@@ -29,6 +29,7 @@ export default function App() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'admin' | 'customer'>('admin');
   
   // Data states
@@ -216,6 +217,33 @@ export default function App() {
     }
   };
 
+  const handleAddItem = async (item: any) => {
+    try {
+      const url = item._id ? `${API_BASE_URL}/api/menu/${item._id}` : `${API_BASE_URL}/api/menu`;
+      const method = item._id ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(item)
+      });
+      if (res.ok) {
+        addNotification(`${item.name} ${item._id ? 'updated' : 'added to menu'}`, 'success');
+        fetchData();
+        setEditingItem(null);
+      } else {
+        const data = await res.json();
+        addNotification(data.message || 'Failed to save item', 'warning');
+      }
+    } catch (err) {
+      console.error('Save item error:', err);
+      addNotification('Connection error', 'warning');
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedTable) {
       addNotification('Please select a table number first', 'warning');
@@ -346,7 +374,7 @@ export default function App() {
                     </div>
 
                     {activeTab === 'dashboard' && <Dashboard payments={payments} orders={orders} reservations={reservations} menuItems={menuItems} setActiveTab={setActiveTab} />}
-                    {activeTab === 'menu' && <MenuManagement menuItems={menuItems} token={token} onUpdateMenu={fetchData} />}
+                    {activeTab === 'menu' && <MenuManagement menuItems={menuItems} token={token} onUpdateMenu={fetchData} onEditItem={(item) => { setEditingItem(item); setShowAddItemModal(true); }} />}
                     {activeTab === 'orders' && <OrderManagement orders={orders} token={token} onUpdateOrder={fetchData} />}
                     {activeTab === 'inventory' && <InventoryManagement menuItems={menuItems} token={token} onUpdate={fetchData} />}
                     {activeTab === 'reservations' && <ReservationManagement reservations={reservations} token={token} onUpdate={fetchData} />}
@@ -372,7 +400,12 @@ export default function App() {
           </div>
         )}
 
-        <AddItemModal isOpen={showAddItemModal} onClose={() => setShowAddItemModal(false)} />
+        <AddItemModal 
+          isOpen={showAddItemModal} 
+          onClose={() => { setShowAddItemModal(false); setEditingItem(null); }} 
+          onSave={handleAddItem}
+          initialData={editingItem}
+        />
       </main>
 
       {/* Notifications Toast */}

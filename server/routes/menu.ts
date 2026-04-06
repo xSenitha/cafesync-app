@@ -44,8 +44,8 @@ router.get('/', async (req, res) => {
 // @desc    Add a menu item (Admin only)
 router.post('/', protect, adminOnly, upload.single('image'), async (req: any, res: any) => {
   try {
-    const { name, description, price, category, stockQuantity } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
+    const { name, description, price, category, stockQuantity, imageUrl: bodyImageUrl } = req.body;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : (bodyImageUrl || '');
 
     const newItem = new MenuItem({
       name,
@@ -70,6 +70,8 @@ router.put('/:id', protect, adminOnly, upload.single('image'), async (req: any, 
     const updateData = { ...req.body };
     if (req.file) {
       updateData.imageUrl = `/uploads/${req.file.filename}`;
+    } else if (req.body.imageUrl) {
+      updateData.imageUrl = req.body.imageUrl;
     }
 
     const updatedItem = await MenuItem.findByIdAndUpdate(req.params.id, updateData, { new: true });
