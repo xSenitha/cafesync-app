@@ -65,4 +65,38 @@ router.post('/login', async (req: any, res: any) => {
   }
 });
 
+// @route   GET /api/auth/users
+// @desc    Get all users (Admin only)
+router.get('/users', async (req: any, res: any) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @route   DELETE /api/auth/users/:id
+// @desc    Delete a user (Admin only)
+router.delete('/users/:id', async (req: any, res: any) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ message: 'User deleted' });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @route   PUT /api/auth/users/:id
+// @desc    Update user role (Admin only)
+router.put('/users/:id', async (req: any, res: any) => {
+  try {
+    const { role } = req.body;
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
+    res.json(user);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;

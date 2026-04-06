@@ -52,13 +52,28 @@ export function Header({ user, health, isSidebarOpen, setIsSidebarOpen, viewMode
           </div>
         )}
         {user && (
-          <div className="flex items-center gap-3 pl-6 border-l border-stone-100">
-            <div className="text-right hidden xs:block">
-              <p className="text-xs font-bold text-stone-800">{user.name}</p>
-              <p className="text-[10px] font-medium text-stone-400 capitalize">{user.role}</p>
+          <div className="flex items-center gap-4 pl-6 border-l border-stone-100">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-black text-stone-800 leading-none">{user.name}</p>
+              <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-1">{user.role}</p>
+              <p className="text-[9px] font-medium text-stone-400 mt-0.5">{user.email}</p>
             </div>
-            <div className="w-9 h-9 bg-stone-100 rounded-full flex items-center justify-center text-stone-400 border border-stone-200">
-              <User size={18} />
+            <div className="relative group">
+              <div className="w-10 h-10 bg-stone-900 rounded-2xl flex items-center justify-center text-white font-black text-sm shadow-lg shadow-stone-900/20 group-hover:scale-105 transition-transform cursor-pointer">
+                {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+              </div>
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-stone-100 p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all transform origin-top-right scale-95 group-hover:scale-100 z-[60]">
+                <div className="p-3 border-b border-stone-50 mb-1">
+                  <p className="text-xs font-black text-stone-800">{user.name}</p>
+                  <p className="text-[10px] text-stone-400 font-medium">{user.email}</p>
+                </div>
+                <div className="p-2">
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-wider">
+                    <User size={12} />
+                    {user.role} Account
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -8,11 +8,12 @@ interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   orders: any[];
+  reservations: any[];
   user: any;
   onSignOut: () => void;
 }
 
-export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveTab, orders, user, onSignOut }: SidebarProps) {
+export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveTab, orders, reservations, user, onSignOut }: SidebarProps) {
   return (
     <>
       <AnimatePresence>
@@ -47,7 +48,7 @@ export function Sidebar({ isSidebarOpen, setIsSidebarOpen, activeTab, setActiveT
           {user?.role === 'admin' && (
             <NavItem icon={<Box size={20} />} label="Inventory" active={activeTab === 'inventory'} onClick={() => { setActiveTab('inventory'); setIsSidebarOpen(false); }} />
           )}
-          <NavItem icon={<Calendar size={20} />} label="Reservations" active={activeTab === 'reservations'} onClick={() => { setActiveTab('reservations'); setIsSidebarOpen(false); }} />
+          <NavItem icon={<Calendar size={20} />} label="Reservations" active={activeTab === 'reservations'} onClick={() => { setActiveTab('reservations'); setIsSidebarOpen(false); }} badge={reservations.filter(r => r.status === 'Pending').length} />
           <NavItem icon={<CreditCard size={20} />} label="Payments" active={activeTab === 'payments'} onClick={() => { setActiveTab('payments'); setIsSidebarOpen(false); }} />
           
           <div className="pt-6 pb-2 px-4">

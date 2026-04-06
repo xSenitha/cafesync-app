@@ -64,7 +64,7 @@ export function Auth({
               value={name} 
               onChange={(e) => setName(e.target.value)}
               placeholder="Your Name"
-              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium"
+              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium text-stone-800"
             />
           </div>
           <div>
@@ -74,7 +74,7 @@ export function Auth({
               value={email} 
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Your Email"
-              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium"
+              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium text-stone-800"
             />
           </div>
           <div>
@@ -84,7 +84,7 @@ export function Auth({
               value={password} 
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium"
+              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium text-stone-800"
             />
           </div>
           <div className="flex flex-col gap-3 pt-4">

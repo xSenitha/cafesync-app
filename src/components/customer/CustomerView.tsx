@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Coffee, ShoppingCart, Utensils, Plus, Minus, ChevronRight, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle } from 'lucide-react';
+import { Coffee, ShoppingCart, Utensils, Plus, Minus, ChevronRight, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { FeedbackForm } from './FeedbackForm';
 import { ReservationForm } from './ReservationForm';
+import { PaymentModal } from './PaymentModal';
 
 interface CustomerViewProps {
   activeTab: string;
@@ -17,14 +18,18 @@ interface CustomerViewProps {
   selectedTable: number | null;
   setSelectedTable: (table: number | null) => void;
   onPlaceOrder: () => void;
+  token: string | null;
+  onUpdate: () => void;
 }
 
 export function CustomerView({ 
   activeTab, menuItems, orders, reservations, payments, cart, setCart, 
-  selectedCategory, setSelectedCategory, selectedTable, setSelectedTable, onPlaceOrder 
+  selectedCategory, setSelectedCategory, selectedTable, setSelectedTable, onPlaceOrder,
+  token, onUpdate
 }: CustomerViewProps) {
   const [showFeedbackForm, setShowFeedbackForm] = useState<string | null>(null);
   const [showReservationForm, setShowReservationForm] = useState(false);
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<any | null>(null);
   const categories = ['All', ...new Set(menuItems.map((item: any) => item.category))];
   const filteredItems = selectedCategory === 'All' 
     ? menuItems 
@@ -63,16 +68,25 @@ export function CustomerView({
                   <h2 className="text-3xl font-black text-stone-800">Fresh Menu</h2>
                   <p className="text-stone-400 text-sm font-medium mt-1">Select your favorite items and place an order.</p>
                 </div>
-                <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-stone-100 shadow-sm">
-                  <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-2">Table</label>
-                  <select 
-                    value={selectedTable || ''} 
-                    onChange={(e) => setSelectedTable(Number(e.target.value))}
-                    className="bg-stone-50 px-4 py-2 rounded-xl text-xs font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => setShowReservationForm(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-50 hover:bg-amber-100 rounded-xl text-xs font-black uppercase tracking-wider text-amber-700 transition-all border border-amber-100"
                   >
-                    <option value="">Select</option>
-                    {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>Table {n}</option>)}
-                  </select>
+                    <Calendar size={14} />
+                    Book a Table
+                  </button>
+                  <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-stone-100 shadow-sm">
+                    <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-2">Table</label>
+                    <select 
+                      value={selectedTable || ''} 
+                      onChange={(e) => setSelectedTable(Number(e.target.value))}
+                      className="bg-stone-50 px-4 py-2 rounded-xl text-xs font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="">Select</option>
+                      {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>Table {n}</option>)}
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -226,6 +240,15 @@ export function CustomerView({
                       }`}>
                         {order.status}
                       </div>
+                      {order.status !== 'Paid' && order.status !== 'Cancelled' && (
+                        <button 
+                          onClick={() => setSelectedOrderForPayment(order)}
+                          className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-900/10"
+                        >
+                          <Wallet size={14} />
+                          Pay Now
+                        </button>
+                      )}
                       {order.status === 'Paid' && (
                         <button 
                           onClick={() => setShowFeedbackForm(order._id)}
@@ -244,7 +267,16 @@ export function CustomerView({
               <FeedbackForm 
                 orderId={showFeedbackForm} 
                 onClose={() => setShowFeedbackForm(null)} 
-                onSuccess={() => {}} 
+                onSuccess={onUpdate} 
+              />
+            )}
+            {selectedOrderForPayment && (
+              <PaymentModal
+                isOpen={!!selectedOrderForPayment}
+                onClose={() => setSelectedOrderForPayment(null)}
+                order={selectedOrderForPayment}
+                token={token}
+                onSuccess={onUpdate}
               />
             )}
           </div>

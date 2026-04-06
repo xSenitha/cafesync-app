@@ -12,6 +12,7 @@ import { OrderManagement } from './components/admin/OrderManagement';
 import { MenuManagement } from './components/admin/MenuManagement';
 import { InventoryManagement } from './components/admin/InventoryManagement';
 import { ReservationManagement } from './components/admin/ReservationManagement';
+import { StaffManagement } from './components/admin/StaffManagement';
 import { FeedbackManagement } from './components/admin/FeedbackManagement';
 import { CustomerView } from './components/customer/CustomerView';
 import { AddItemModal } from './components/admin/AddItemModal';
@@ -114,7 +115,7 @@ export default function App() {
     }, 5000);
   };
 
-  // Polling for new orders (Real-time simulation)
+  // Polling for new orders and status changes (Real-time simulation)
   useEffect(() => {
     if (!token) return;
     const interval = setInterval(async () => {
@@ -123,17 +124,29 @@ export default function App() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
-        if (Array.isArray(data) && data.length > orders.length) {
-          const newOrder = data[0];
-          addNotification(`New Order received! Table ${newOrder.tableNumber}`, 'success');
+        if (Array.isArray(data)) {
+          // Check for new orders
+          if (data.length > orders.length) {
+            const newOrder = data[0];
+            addNotification(`New Order received! Table ${newOrder.tableNumber}`, 'success');
+          }
+          
+          // Check for status changes in existing orders
+          data.forEach(newOrder => {
+            const oldOrder = orders.find(o => o._id === newOrder._id);
+            if (oldOrder && oldOrder.status !== newOrder.status) {
+              addNotification(`Order #${newOrder._id.slice(-6).toUpperCase()} status updated to ${newOrder.status}`, 'info');
+            }
+          });
+
           setOrders(data);
         }
       } catch (err) {
         console.error('Polling error:', err);
       }
-    }, 10000); // Poll every 10 seconds
+    }, 5000); // Poll every 5 seconds for better "real-time" feel
     return () => clearInterval(interval);
-  }, [token, orders.length]);
+  }, [token, orders]);
 
   const handleRegister = async () => {
     setLoading(true);
@@ -255,6 +268,7 @@ export default function App() {
                 activeTab={activeTab} 
                 setActiveTab={setActiveTab}
                 orders={orders}
+                reservations={reservations}
                 user={user}
                 onSignOut={() => { setUser(null); setToken(null); setActiveTab('auth'); setIsSidebarOpen(false); }}
               />
@@ -272,6 +286,8 @@ export default function App() {
                   selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
                   selectedTable={selectedTable} setSelectedTable={setSelectedTable}
                   onPlaceOrder={handlePlaceOrder}
+                  token={token}
+                  onUpdate={fetchData}
                 />
               ) : (
                 <AnimatePresence mode="wait">
@@ -296,7 +312,7 @@ export default function App() {
                           {activeTab === 'about' && 'Learn more about CafeSync and the development team.'}
                         </p>
                       </div>
-                      {activeTab !== 'dashboard' && activeTab !== 'about' && (
+                      {activeTab !== 'dashboard' && activeTab !== 'about' && activeTab !== 'staff' && (
                         <button 
                           onClick={() => { if (activeTab === 'menu') setShowAddItemModal(true); }}
                           className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-900/10 active:scale-95"
@@ -312,14 +328,14 @@ export default function App() {
                     {activeTab === 'orders' && <OrderManagement orders={orders} token={token} onUpdateOrder={fetchData} />}
                     {activeTab === 'inventory' && <InventoryManagement menuItems={menuItems} token={token} onUpdate={fetchData} />}
                     {activeTab === 'reservations' && <ReservationManagement reservations={reservations} token={token} onUpdate={fetchData} />}
+                    {activeTab === 'staff' && <StaffManagement token={token} />}
                     {activeTab === 'feedback' && <FeedbackManagement feedback={feedback} />}
                     {activeTab === 'about' && <About />}
                     
-                    {(activeTab === 'payments' || activeTab === 'staff') && (
+                    {(activeTab === 'payments') && (
                       <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
                         <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
                           {activeTab === 'payments' && <CreditCard size={40} />}
-                          {activeTab === 'staff' && <Users size={40} />}
                         </div>
                         <h3 className="text-xl font-black text-stone-800">Module Ready for Integration</h3>
                         <p className="text-stone-400 text-sm mt-2 max-w-md mx-auto">
