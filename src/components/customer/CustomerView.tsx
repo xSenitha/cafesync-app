@@ -17,7 +17,7 @@ interface CustomerViewProps {
   setCart: (cart: any[]) => void;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
-  onPlaceOrder: (orderData: any) => void;
+  onPlaceOrder: (orderData: any) => Promise<boolean>;
   token: string | null;
   onUpdate: () => void;
   setActiveTab: (tab: string) => void;
@@ -436,9 +436,10 @@ export function CustomerView({
           setActiveTab('reservations');
           setShowReservationForm(true);
         }}
-        onPlaceOrder={(orderData) => {
-          onPlaceOrder(orderData);
-          setShowCartModal(false);
+        onPlaceOrder={async (orderData) => {
+          const success = await onPlaceOrder(orderData);
+          if (success) setShowCartModal(false);
+          return success;
         }}
         loading={loading}
         addNotification={addNotification}

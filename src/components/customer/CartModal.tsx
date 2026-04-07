@@ -7,7 +7,7 @@ interface CartModalProps {
   onClose: () => void;
   cart: any[];
   setCart: (cart: any[]) => void;
-  onPlaceOrder: (orderData: any) => void;
+  onPlaceOrder: (orderData: any) => Promise<boolean> | void;
   reservations: any[];
   tables: any[];
   onBookTable: () => void;

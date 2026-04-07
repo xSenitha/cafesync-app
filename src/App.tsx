@@ -286,12 +286,15 @@ export default function App() {
         addNotification('Order placed successfully!', 'success');
         setActiveTab('orders');
         // fetchData will be triggered by activeTab change effect
+        return true;
       } else {
         const data = await res.json();
         addNotification(data.message || 'Failed to place order', 'warning');
+        return false;
       }
     } catch (err) {
-      setError('Connection error while placing order');
+      addNotification('Connection error while placing order', 'warning');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -413,7 +416,7 @@ export default function App() {
       </main>
 
       {/* Notifications Toast */}
-      <div className="fixed bottom-6 right-6 z-[100] space-y-3">
+      <div className="fixed top-6 right-6 z-[200] space-y-3">
         <AnimatePresence>
           {notifications.map((n) => (
             <motion.div
