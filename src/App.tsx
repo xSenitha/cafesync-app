@@ -404,11 +404,11 @@ export default function App() {
                       )}
                     </div>
 
-                    {activeTab === 'dashboard' && <Dashboard payments={payments} orders={orders} reservations={reservations} menuItems={menuItems} setActiveTab={setActiveTab} />}
+                    {activeTab === 'dashboard' && <Dashboard payments={payments} orders={orders} reservations={reservations} tables={tables} menuItems={menuItems} setActiveTab={setActiveTab} />}
                     {activeTab === 'menu' && <MenuManagement menuItems={menuItems} token={token} onUpdateMenu={fetchData} onEditItem={(item) => { setEditingItem(item); setShowAddItemModal(true); }} />}
                     {activeTab === 'orders' && <OrderManagement orders={orders} token={token} onUpdateOrder={fetchData} />}
                     {activeTab === 'inventory' && <InventoryManagement menuItems={menuItems} token={token} onUpdate={fetchData} />}
-                    {activeTab === 'reservations' && <ReservationManagement reservations={reservations} tables={tables} token={token} onUpdate={fetchData} />}
+                    {activeTab === 'reservations' && <ReservationManagement reservations={reservations} orders={orders} tables={tables} token={token} onUpdate={fetchData} />}
                     {activeTab === 'payments' && <PaymentManagement payments={payments} token={token} />}
                     {activeTab === 'staff' && <StaffManagement token={token} currentUser={user} />}
                     {activeTab === 'feedback' && <FeedbackManagement feedback={feedback} />}

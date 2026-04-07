@@ -1,4 +1,4 @@
-import { ChevronRight, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ChevronRight, CheckCircle, XCircle, Clock, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
 interface OrderManagementProps {
@@ -26,8 +26,37 @@ export function OrderManagement({ orders, token, onUpdateOrder }: OrderManagemen
     }
   };
 
+  const clearHistory = async () => {
+    if (!window.confirm('Are you sure you want to clear order history? (Only Paid and Cancelled orders will be removed)')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/orders/clear`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        onUpdateOrder();
+      }
+    } catch (err) {
+      console.error('Clear history error:', err);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm overflow-hidden">
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        {orders.some(o => o.status === 'Paid' || o.status === 'Cancelled') && (
+          <button 
+            onClick={clearHistory}
+            className="flex items-center gap-2 bg-stone-100 text-stone-600 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-stone-200 transition-all"
+          >
+            <Trash2 size={16} />
+            Clear History
+          </button>
+        )}
+      </div>
+      <div className="bg-white rounded-[2rem] border border-stone-100 shadow-sm overflow-hidden">
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-stone-50 border-b border-stone-100">
@@ -84,6 +113,7 @@ export function OrderManagement({ orders, token, onUpdateOrder }: OrderManagemen
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }

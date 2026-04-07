@@ -74,7 +74,7 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
 
     const now = new Date();
     const hasReservation = reservations.some(r => {
-      if (r.tableNumber !== num || r.status !== 'Confirmed') return false;
+      if (r.tableNumber !== num || (r.status !== 'Confirmed' && r.status !== 'Pending')) return false;
       
       const resTime = new Date(r.reservationTime);
       const diffMs = resTime.getTime() - now.getTime();

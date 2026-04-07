@@ -78,6 +78,24 @@ export function CustomerView({
     }
   };
 
+  const onClearOrderHistory = async () => {
+    if (!window.confirm('Are you sure you want to clear your order history? (Only Paid and Cancelled orders will be removed)')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/orders/clear`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        onUpdate();
+        addNotification('Order history cleared', 'success');
+      }
+    } catch (err) {
+      console.error('Clear order history error:', err);
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'menu':
@@ -155,9 +173,20 @@ export function CustomerView({
       case 'orders':
         return (
           <div className="space-y-8">
-            <div>
-              <h2 className="text-3xl font-black text-stone-800">Order History</h2>
-              <p className="text-stone-400 text-sm font-medium mt-1">Track your active and past orders.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              <div>
+                <h2 className="text-3xl font-black text-stone-800">Order History</h2>
+                <p className="text-stone-400 text-sm font-medium mt-1">Track your active and past orders.</p>
+              </div>
+              {orders.some((o: any) => o.status === 'Paid' || o.status === 'Cancelled') && (
+                <button 
+                  onClick={onClearOrderHistory}
+                  className="flex items-center gap-2 bg-stone-100 text-stone-600 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-stone-200 transition-all"
+                >
+                  <Trash2 size={18} />
+                  Clear History
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-4">
               {orders.length === 0 ? (

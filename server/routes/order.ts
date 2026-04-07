@@ -119,4 +119,22 @@ router.patch('/:id', protect, staffOrAbove, async (req: any, res) => {
   }
 });
 
+// @route   DELETE /api/orders/clear
+// @desc    Clear order history (Paid or Cancelled orders)
+router.delete('/clear', protect, async (req: any, res) => {
+  try {
+    let query: any = { status: { $in: ['Paid', 'Cancelled'] } };
+    
+    // If not admin/staff, only clear their own history
+    if (!['admin', 'manager', 'staff'].includes(req.user.role)) {
+      query.user = req.user._id;
+    }
+    
+    await Order.deleteMany(query);
+    res.json({ message: 'Order history cleared' });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;

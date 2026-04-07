@@ -4,12 +4,13 @@ import { API_BASE_URL } from '../../config';
 
 interface ReservationManagementProps {
   reservations: any[];
+  orders: any[];
   tables: any[];
   token: string | null;
   onUpdate: () => void;
 }
 
-export function ReservationManagement({ reservations, tables, token, onUpdate }: ReservationManagementProps) {
+export function ReservationManagement({ reservations, orders, tables, token, onUpdate }: ReservationManagementProps) {
   const [newTableNumber, setNewTableNumber] = React.useState('');
   const [newTableCapacity, setNewTableCapacity] = React.useState('4');
 
@@ -88,6 +89,26 @@ export function ReservationManagement({ reservations, tables, token, onUpdate }:
     }
   };
 
+  const getTableStatus = (num: number) => {
+    const hasActiveOrder = orders.some(o => 
+      o.tableNumber === num && 
+      ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
+    );
+    if (hasActiveOrder) return 'Occupied';
+
+    const now = new Date();
+    const hasReservation = reservations.some(r => {
+      if (r.tableNumber !== num || r.status === 'Cancelled' || r.status === 'Completed') return false;
+      const resTime = new Date(r.reservationTime);
+      const diffMs = Math.abs(now.getTime() - resTime.getTime());
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return diffHours < 2; // Within 2 hours
+    });
+    if (hasReservation) return 'Reserved';
+
+    return 'Available';
+  };
+
   return (
     <div className="space-y-8">
       {/* Table Management Section */}
@@ -96,6 +117,20 @@ export function ReservationManagement({ reservations, tables, token, onUpdate }:
           <div>
             <h3 className="text-xl font-black text-stone-800">Table Layout</h3>
             <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Manage restaurant seating capacity</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Available</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-amber-500" />
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Occupied</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Reserved</span>
+            </div>
           </div>
           <form onSubmit={addTable} className="flex flex-wrap items-center gap-3 bg-stone-50 p-2 rounded-2xl border border-stone-100">
             <div className="flex items-center gap-2 px-3">
@@ -132,21 +167,39 @@ export function ReservationManagement({ reservations, tables, token, onUpdate }:
 
         <div className="p-8 bg-stone-50/30">
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
-            {tables.map((table) => (
-              <div key={table._id} className="group relative bg-white border border-stone-100 rounded-2xl p-5 flex flex-col items-center gap-1 shadow-sm hover:shadow-md hover:border-amber-200 transition-all">
-                <div className="w-10 h-10 bg-stone-50 rounded-full flex items-center justify-center mb-1 group-hover:bg-amber-50 transition-colors">
-                  <span className="text-lg font-black text-stone-800 group-hover:text-amber-600 transition-colors">{table.number}</span>
+            {tables.map((table) => {
+              const status = getTableStatus(table.number);
+              return (
+                <div key={table._id} className={`group relative bg-white border rounded-2xl p-5 flex flex-col items-center gap-1 shadow-sm hover:shadow-md transition-all ${
+                  status === 'Occupied' ? 'border-amber-200 bg-amber-50/10' : 
+                  status === 'Reserved' ? 'border-blue-200 bg-blue-50/10' : 
+                  'border-stone-100'
+                }`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 transition-colors ${
+                    status === 'Occupied' ? 'bg-amber-100 text-amber-600' : 
+                    status === 'Reserved' ? 'bg-blue-100 text-blue-600' : 
+                    'bg-stone-50 text-stone-800'
+                  }`}>
+                    <span className="text-lg font-black">{table.number}</span>
+                  </div>
+                  <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{table.capacity} Seats</span>
+                  <span className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md mt-1 ${
+                    status === 'Occupied' ? 'bg-amber-100 text-amber-700' : 
+                    status === 'Reserved' ? 'bg-blue-100 text-blue-700' : 
+                    'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {status}
+                  </span>
+                  
+                  <button 
+                    onClick={() => deleteTable(table._id)}
+                    className="absolute -top-2 -right-2 bg-white text-red-500 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg border border-stone-100 hover:bg-red-50"
+                  >
+                    <XCircle size={14} />
+                  </button>
                 </div>
-                <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{table.capacity} Seats</span>
-                
-                <button 
-                  onClick={() => deleteTable(table._id)}
-                  className="absolute -top-2 -right-2 bg-white text-red-500 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg border border-stone-100 hover:bg-red-50"
-                >
-                  <XCircle size={14} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
             {tables.length === 0 && (
               <div className="col-span-full py-12 text-center">
                 <div className="bg-stone-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-300">

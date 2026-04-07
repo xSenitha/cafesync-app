@@ -6,12 +6,33 @@ interface DashboardProps {
   payments: any[];
   orders: any[];
   reservations: any[];
+  tables: any[];
   menuItems: any[];
   setActiveTab: (tab: string) => void;
 }
 
-export function Dashboard({ payments, orders, reservations, menuItems, setActiveTab }: DashboardProps) {
+export function Dashboard({ payments, orders, reservations, tables, menuItems, setActiveTab }: DashboardProps) {
   const lowStockItems = menuItems.filter(item => item.stockQuantity <= (item.lowStockThreshold || 10));
+
+  const getTableStatus = (num: number) => {
+    const hasActiveOrder = orders.some(o => 
+      o.tableNumber === num && 
+      ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
+    );
+    if (hasActiveOrder) return 'Occupied';
+
+    const now = new Date();
+    const hasReservation = reservations.some(r => {
+      if (r.tableNumber !== num || (r.status !== 'Confirmed' && r.status !== 'Pending')) return false;
+      const resTime = new Date(r.reservationTime);
+      const diffMs = Math.abs(now.getTime() - resTime.getTime());
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return diffHours < 2; // Within 2 hours
+    });
+    if (hasReservation) return 'Reserved';
+
+    return 'Available';
+  };
 
   return (
     <div className="space-y-8">
@@ -107,6 +128,53 @@ export function Dashboard({ payments, orders, reservations, menuItems, setActive
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Table Status Overview */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-stone-100 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-xl font-black text-stone-800">Table Status</h3>
+              <p className="text-stone-400 text-xs font-medium mt-1">Current floor occupancy</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Available</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-amber-500" />
+                <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Occupied</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">Reserved</span>
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+            {tables.map((table: any) => {
+              const status = getTableStatus(table.number);
+              return (
+                <div 
+                  key={table._id} 
+                  className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-all ${
+                    status === 'Occupied' ? 'bg-amber-50 border-amber-100 text-amber-600' :
+                    status === 'Reserved' ? 'bg-blue-50 border-blue-100 text-blue-600' :
+                    'bg-stone-50 border-stone-100 text-stone-400'
+                  }`}
+                >
+                  <span className="text-sm font-black">{table.number}</span>
+                  <span className="text-[7px] font-black uppercase tracking-tighter">{status}</span>
+                </div>
+              );
+            })}
+            {tables.length === 0 && (
+              <div className="col-span-full py-8 text-center text-stone-400 text-[10px] font-black uppercase tracking-widest">
+                No tables configured
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Recent Orders */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-stone-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
