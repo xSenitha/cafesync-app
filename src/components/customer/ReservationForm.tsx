@@ -19,7 +19,7 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
     tableNumber: 0,
     numberOfGuests: 2,
     reservationDate: new Date().toISOString().split('T')[0],
-    reservationTime: '',
+    reservationTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
     notes: ''
   });
   const [loading, setLoading] = useState(false);
@@ -27,12 +27,20 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
   const [success, setSuccess] = useState(false);
 
   const isTableReserved = (num: number) => {
-    if (!formData.reservationDate) return false;
-    return reservations.some(r => 
-      r.tableNumber === num && 
-      r.status === 'Confirmed' &&
-      new Date(r.reservationTime).toDateString() === new Date(formData.reservationDate).toDateString()
-    );
+    if (!formData.reservationDate || !formData.reservationTime) return false;
+    
+    const selectedTime = new Date(`${formData.reservationDate}T${formData.reservationTime}`);
+    
+    return reservations.some(r => {
+      if (r.tableNumber !== num || r.status === 'Cancelled' || r.status === 'Completed') return false;
+      
+      const resTime = new Date(r.reservationTime);
+      const diffMs = Math.abs(selectedTime.getTime() - resTime.getTime());
+      const diffHours = diffMs / (1000 * 60 * 60);
+      
+      // Consider a table reserved if another reservation exists within a 2-hour window
+      return diffHours < 2;
+    });
   };
 
   const availableTablesCount = tables.filter(t => !isTableReserved(t.number)).length;
@@ -70,10 +78,10 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
           setFormData({
             customerName: '',
             customerPhone: '',
-            tableNumber: 1,
+            tableNumber: 0,
             numberOfGuests: 2,
-            reservationDate: '',
-            reservationTime: '',
+            reservationDate: new Date().toISOString().split('T')[0],
+            reservationTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
             notes: ''
           });
         }, 2000);

@@ -175,6 +175,18 @@ export default function App() {
           }
           setMenuItems(menuData);
         }
+
+        // Fetch Reservations
+        const reservationsRes = await fetch(`${API_BASE_URL}/api/reservations`, { headers });
+        const reservationsData = await reservationsRes.json();
+        if (Array.isArray(reservationsData)) {
+          // Check for new reservations (only for admin)
+          if (viewMode === 'admin' && reservationsData.length > reservations.length) {
+            const newRes = reservationsData[0];
+            addNotification(`New Reservation from ${newRes.customerName}!`, 'success');
+          }
+          setReservations(reservationsData);
+        }
       } catch (err) {
         console.error('Polling error:', err);
       }
@@ -351,6 +363,7 @@ export default function App() {
                   selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
                   onPlaceOrder={handlePlaceOrder}
                   token={token}
+                  user={user}
                   onUpdate={fetchData}
                   setActiveTab={setActiveTab}
                   loading={loading}

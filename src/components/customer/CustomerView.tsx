@@ -19,6 +19,7 @@ interface CustomerViewProps {
   setSelectedCategory: (category: string) => void;
   onPlaceOrder: (orderData: any) => Promise<boolean>;
   token: string | null;
+  user: any | null;
   onUpdate: () => void;
   setActiveTab: (tab: string) => void;
   loading: boolean;
@@ -28,7 +29,7 @@ interface CustomerViewProps {
 export function CustomerView({ 
   activeTab, menuItems, orders, reservations, tables, payments, cart, setCart, 
   selectedCategory, setSelectedCategory, onPlaceOrder,
-  token, onUpdate, setActiveTab, loading, addNotification
+  token, user, onUpdate, setActiveTab, loading, addNotification
 }: CustomerViewProps) {
   const [showFeedbackForm, setShowFeedbackForm] = useState<string | null>(null);
   const [showReservationForm, setShowReservationForm] = useState(false);
@@ -205,6 +206,7 @@ export function CustomerView({
         );
 
       case 'reservations':
+        const myReservations = reservations.filter((res: any) => res.user === user?._id);
         return (
           <div className="space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -221,7 +223,7 @@ export function CustomerView({
               </button>
             </div>
             <div className="grid grid-cols-1 gap-4">
-              {reservations.length === 0 ? (
+              {myReservations.length === 0 ? (
                 <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
                   <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
                     <Calendar size={40} />
@@ -230,7 +232,7 @@ export function CustomerView({
                   <p className="text-stone-400 text-sm mt-2">Book a table for your next visit.</p>
                 </div>
               ) : (
-                reservations.map((res: any) => (
+                myReservations.map((res: any) => (
                   <div key={res._id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
                       <div className="bg-blue-50 p-3 rounded-2xl text-blue-700">
@@ -239,7 +241,7 @@ export function CustomerView({
                       <div>
                         <p className="text-sm font-black text-stone-800">Table #{res.tableNumber}</p>
                         <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
-                          {new Date(res.reservationDate).toLocaleDateString()} at {new Date(res.reservationDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(res.reservationTime).toLocaleDateString()} at {new Date(res.reservationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                     </div>

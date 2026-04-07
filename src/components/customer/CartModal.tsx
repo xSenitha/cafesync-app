@@ -66,11 +66,19 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
     );
     if (hasActiveOrder) return 'Occupied';
 
-    const hasReservation = reservations.some(r => 
-      r.tableNumber === num && 
-      r.status === 'Confirmed' &&
-      new Date(r.reservationTime).toDateString() === new Date().toDateString()
-    );
+    const now = new Date();
+    const hasReservation = reservations.some(r => {
+      if (r.tableNumber !== num || r.status !== 'Confirmed') return false;
+      
+      const resTime = new Date(r.reservationTime);
+      const diffMs = resTime.getTime() - now.getTime();
+      const diffMinutes = diffMs / (1000 * 60);
+      
+      // Table is reserved if there's a reservation today starting within 30 minutes
+      // or if it's already past the reservation time but not yet completed
+      return resTime.toDateString() === now.toDateString() && 
+             (diffMinutes <= 30 && diffMinutes >= -120); // 30 min before to 2 hours after
+    });
     if (hasReservation) return 'Reserved';
 
     return 'Available';

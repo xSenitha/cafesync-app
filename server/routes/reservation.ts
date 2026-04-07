@@ -5,14 +5,28 @@ import { protect } from '../middleware/auth.ts';
 const router = express.Router();
 
 // @route   GET /api/reservations
-// @desc    Get all reservations
+// @desc    Get all reservations (Admin sees all, Customer sees limited for availability)
 router.get('/', protect, async (req: any, res) => {
   try {
-    let query = {};
-    if (req.user.role === 'customer') {
-      query = { user: req.user._id };
+    let reservations;
+    if (req.user.role === 'admin' || req.user.role === 'staff') {
+      reservations = await Reservation.find().sort({ reservationTime: 1 });
+    } else {
+      // For customers, return all reservations but hide sensitive info 
+      // so they can check table availability
+      reservations = await Reservation.find({}, 'user tableNumber reservationTime status numberOfGuests').sort({ reservationTime: 1 });
     }
-    const reservations = await Reservation.find(query).sort({ reservationTime: 1 });
+    res.json(reservations);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @route   GET /api/reservations/my
+// @desc    Get current user's reservations
+router.get('/my', protect, async (req: any, res) => {
+  try {
+    const reservations = await Reservation.find({ user: req.user._id }).sort({ reservationTime: 1 });
     res.json(reservations);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
