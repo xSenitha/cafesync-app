@@ -47,7 +47,14 @@ export function OrderManagement({ orders, token, onUpdateOrder }: OrderManagemen
               </td>
               <td className="px-6 py-4">
                 <p className="text-sm font-bold text-stone-800">{order.customerName || `Table ${order.tableNumber}`}</p>
-                <p className="text-[10px] font-medium text-stone-400">{order.orderType}</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {order.items.map((item: any, idx: number) => (
+                    <span key={idx} className="text-[9px] font-bold bg-stone-100 text-stone-600 px-1.5 py-0.5 rounded">
+                      {item.menuItem?.name} x{item.quantity}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-[10px] font-medium text-stone-400 mt-1">{order.orderType}</p>
               </td>
               <td className="px-6 py-4">
                 <p className="text-sm font-black text-stone-800">Rs. {order.totalAmount}</p>

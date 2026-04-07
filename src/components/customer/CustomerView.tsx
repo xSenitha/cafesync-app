@@ -156,7 +156,14 @@ export function CustomerView({
                       </div>
                       <div>
                         <p className="text-sm font-black text-stone-800">Order #{order._id.slice(-6).toUpperCase()}</p>
-                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{new Date(order.createdAt).toLocaleString()}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {order.items.map((item: any, idx: number) => (
+                            <span key={idx} className="text-[9px] font-bold bg-stone-50 text-stone-500 px-1.5 py-0.5 rounded">
+                              {item.menuItem?.name} x{item.quantity}
+                            </span>
+                          ))}
+                        </div>
+                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mt-1">{new Date(order.createdAt).toLocaleString()}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-8">

@@ -37,16 +37,24 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
   };
 
   const handlePlaceOrder = () => {
-    if (orderType === 'Dine-In') {
-      onBookTable();
+    if (orderType === 'Dine-In' && !tableNumber) {
+      addNotification('Please select a table for Dine-In', 'warning');
       return;
     }
     onPlaceOrder({
       orderType,
-      tableNumber: null,
+      tableNumber: orderType === 'Dine-In' ? parseInt(tableNumber) : null,
       items: cart,
       totalAmount: total
     });
+  };
+
+  const isTableReserved = (num: number) => {
+    return reservations.some(r => 
+      r.tableNumber === num && 
+      r.status === 'Confirmed' &&
+      new Date(r.reservationTime).toDateString() === new Date().toDateString()
+    );
   };
 
   return (
@@ -164,7 +172,10 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
                     {(['Dine-In', 'Takeaway', 'Online'] as const).map((type) => (
                       <button
                         key={type}
-                        onClick={() => setOrderType(type)}
+                        onClick={() => {
+                          setOrderType(type);
+                          if (type !== 'Dine-In') setTableNumber('');
+                        }}
                         className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
                           orderType === type 
                             ? 'bg-stone-900 border-stone-900 text-white shadow-xl shadow-stone-900/20' 
@@ -176,6 +187,50 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
                     ))}
                   </div>
                 </div>
+
+                {/* Table Selection for Dine-In */}
+                {orderType === 'Dine-In' && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-stone-400 uppercase tracking-[0.2em] ml-1">Select Table</label>
+                      <button 
+                        onClick={onBookTable}
+                        className="text-[10px] font-black text-amber-700 uppercase tracking-widest hover:underline flex items-center gap-1"
+                      >
+                        <Calendar size={12} />
+                        Book for later
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      {tables.map((table) => {
+                        const reserved = isTableReserved(table.number);
+                        return (
+                          <button
+                            key={table._id}
+                            type="button"
+                            disabled={reserved}
+                            onClick={() => setTableNumber(table.number.toString())}
+                            className={`py-2.5 rounded-xl text-[10px] font-black transition-all border-2 flex flex-col items-center gap-0.5 ${
+                              tableNumber === table.number.toString()
+                                ? 'bg-stone-900 border-stone-900 text-white shadow-lg shadow-stone-900/20' 
+                                : reserved
+                                  ? 'bg-amber-50 border-amber-100 text-amber-700 cursor-not-allowed opacity-60'
+                                  : 'bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200'
+                            }`}
+                          >
+                            <span className="text-[8px] opacity-50">T</span>
+                            {table.number}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {tables.length === 0 && (
+                      <div className="text-center py-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest border-2 border-dashed border-stone-100 rounded-2xl">
+                        No tables configured.
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Order Summary */}
                 <div className="pt-10 border-t border-stone-100 space-y-4">

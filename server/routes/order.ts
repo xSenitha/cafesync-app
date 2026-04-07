@@ -1,9 +1,31 @@
 import express from 'express';
 import Order from '../models/Order.ts';
 import MenuItem from '../models/MenuItem.ts';
+import Payment from '../models/Payment.ts';
 import { protect, staffOrAbove } from '../middleware/auth.ts';
 
 const router = express.Router();
+
+// Helper to handle payment creation on status update
+const handlePaymentOnStatusUpdate = async (orderId: string, status: string, user: any) => {
+  if (status === 'Paid') {
+    const order = await Order.findById(orderId);
+    if (order && order.status !== 'Paid') {
+      // Check if payment already exists
+      const existingPayment = await Payment.findOne({ orderId });
+      if (!existingPayment) {
+        await Payment.create({
+          orderId: order._id,
+          user: order.user,
+          amount: order.totalAmount,
+          paymentMethod: 'Cash', // Default for manual admin update
+          status: 'Completed',
+          paidAt: new Date()
+        });
+      }
+    }
+  }
+};
 
 // @route   GET /api/orders
 // @desc    Get all orders
@@ -54,11 +76,14 @@ router.post('/', protect, async (req: any, res) => {
 
 // @route   PUT /api/orders/:id
 // @desc    Update order status
-router.put('/:id', protect, staffOrAbove, async (req, res) => {
+router.put('/:id', protect, staffOrAbove, async (req: any, res) => {
   try {
+    const { status } = req.body;
+    await handlePaymentOnStatusUpdate(req.params.id, status, req.user);
+    
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
-      { status: req.body.status },
+      { status },
       { new: true }
     );
     res.json(updatedOrder);
@@ -69,8 +94,12 @@ router.put('/:id', protect, staffOrAbove, async (req, res) => {
 
 // @route   PATCH /api/orders/:id
 // @desc    Partially update order status
-router.patch('/:id', protect, staffOrAbove, async (req, res) => {
+router.patch('/:id', protect, staffOrAbove, async (req: any, res) => {
   try {
+    if (req.body.status) {
+      await handlePaymentOnStatusUpdate(req.params.id, req.body.status, req.user);
+    }
+    
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
