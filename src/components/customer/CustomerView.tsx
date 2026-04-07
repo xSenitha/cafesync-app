@@ -194,23 +194,6 @@ export function CustomerView({
                 ))
               )}
             </div>
-            {showFeedbackForm && (
-              <FeedbackForm 
-                orderId={showFeedbackForm} 
-                onClose={() => setShowFeedbackForm(null)} 
-                onSuccess={onUpdate} 
-                token={token}
-              />
-            )}
-            {selectedOrderForPayment && (
-              <PaymentModal
-                isOpen={!!selectedOrderForPayment}
-                onClose={() => setSelectedOrderForPayment(null)}
-                order={selectedOrderForPayment}
-                token={token}
-                onSuccess={onUpdate}
-              />
-            )}
           </div>
         );
 
@@ -390,6 +373,25 @@ export function CustomerView({
           {renderContent()}
         </motion.div>
       </AnimatePresence>
+
+      {/* Modals */}
+      {showFeedbackForm && (
+        <FeedbackForm 
+          orderId={showFeedbackForm} 
+          onClose={() => setShowFeedbackForm(null)} 
+          onSuccess={onUpdate} 
+          token={token}
+        />
+      )}
+      {selectedOrderForPayment && (
+        <PaymentModal
+          isOpen={!!selectedOrderForPayment}
+          onClose={() => setSelectedOrderForPayment(null)}
+          order={selectedOrderForPayment}
+          token={token}
+          onSuccess={onUpdate}
+        />
+      )}
 
       {/* Floating Cart Button - Accessible from any tab */}
       <AnimatePresence>

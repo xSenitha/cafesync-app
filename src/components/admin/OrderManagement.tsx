@@ -63,12 +63,7 @@ export function OrderManagement({ orders, token, onUpdateOrder }: OrderManagemen
               </td>
               <td className="px-6 py-4">
                 <div className="flex items-center gap-2">
-                  {order.status === 'Pending' && (
-                    <button onClick={() => updateStatus(order._id, 'Preparing')} className="p-2 hover:bg-amber-50 text-amber-600 rounded-lg transition-colors" title="Start Preparing">
-                      <Clock size={18} />
-                    </button>
-                  )}
-                  {order.status === 'Ready' && (
+                  {order.status !== 'Paid' && order.status !== 'Cancelled' && (
                     <button onClick={() => updateStatus(order._id, 'Paid')} className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-lg transition-colors" title="Mark as Paid">
                       <CheckCircle size={18} />
                     </button>
