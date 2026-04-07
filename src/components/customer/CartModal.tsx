@@ -9,13 +9,14 @@ interface CartModalProps {
   setCart: (cart: any[]) => void;
   onPlaceOrder: (orderData: any) => Promise<boolean> | void;
   reservations: any[];
+  orders: any[];
   tables: any[];
   onBookTable: () => void;
   loading: boolean;
   addNotification: (message: string, type: 'info' | 'success' | 'warning') => void;
 }
 
-export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reservations, tables, onBookTable, loading, addNotification }: CartModalProps) {
+export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reservations, orders, tables, onBookTable, loading, addNotification }: CartModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [orderType, setOrderType] = useState<'Dine-In' | 'Takeaway' | 'Online'>('Dine-In');
   const [tableNumber, setTableNumber] = useState('');
@@ -58,12 +59,21 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
     });
   };
 
-  const isTableReserved = (num: number) => {
-    return reservations.some(r => 
+  const getTableStatus = (num: number) => {
+    const hasActiveOrder = orders.some(o => 
+      o.tableNumber === num && 
+      ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
+    );
+    if (hasActiveOrder) return 'Occupied';
+
+    const hasReservation = reservations.some(r => 
       r.tableNumber === num && 
       r.status === 'Confirmed' &&
       new Date(r.reservationTime).toDateString() === new Date().toDateString()
     );
+    if (hasReservation) return 'Reserved';
+
+    return 'Available';
   };
 
   const resetModal = () => {
@@ -196,24 +206,30 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
                     </div>
                     <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                       {tables.map((table) => {
-                        const reserved = isTableReserved(table.number);
+                        const status = getTableStatus(table.number);
+                        const isUnavailable = status !== 'Available';
+                        
                         return (
                           <button
                             key={table._id}
                             type="button"
-                            disabled={reserved}
+                            disabled={isUnavailable}
                             onClick={() => setTableNumber(table.number.toString())}
                             className={`py-4 sm:py-6 rounded-2xl text-xs sm:text-sm font-black transition-all border-2 flex flex-col items-center gap-1 ${
                               tableNumber === table.number.toString()
                                 ? 'bg-stone-900 border-stone-900 text-white shadow-xl shadow-stone-900/20 scale-105' 
-                                : reserved
-                                  ? 'bg-amber-50 border-amber-100 text-amber-700 cursor-not-allowed opacity-60'
-                                  : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200 hover:bg-stone-50'
+                                : status === 'Occupied'
+                                  ? 'bg-red-50 border-red-100 text-red-700 cursor-not-allowed opacity-60'
+                                  : status === 'Reserved'
+                                    ? 'bg-amber-50 border-amber-100 text-amber-700 cursor-not-allowed opacity-60'
+                                    : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200 hover:bg-stone-50'
                             }`}
                           >
                             <span className="text-[8px] sm:text-[10px] opacity-50 uppercase tracking-tighter">Table</span>
                             {table.number}
-                            <span className="text-[8px] opacity-50 font-medium">{table.capacity} Seats</span>
+                            <span className="text-[8px] opacity-50 font-medium">
+                              {status === 'Occupied' ? 'Occupied' : status === 'Reserved' ? 'Reserved' : `${table.capacity} Seats`}
+                            </span>
                           </button>
                         );
                       })}
@@ -225,15 +241,18 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
                     )}
                   </div>
 
-                  <div className="bg-amber-50 p-6 rounded-[2rem] border border-amber-100">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-white p-3 rounded-2xl text-amber-600 shadow-sm">
-                        <Utensils size={24} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-black text-amber-900 uppercase tracking-widest">Dine-In Selected</p>
-                        <p className="text-[10px] text-amber-700 font-medium mt-0.5">Please select a table to proceed with your order.</p>
-                      </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-white border-2 border-stone-100" />
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Available</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-50 border-2 border-red-100" />
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Occupied</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-amber-50 border-2 border-amber-100" />
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Reserved</span>
                     </div>
                   </div>
                 </div>

@@ -430,6 +430,7 @@ export function CustomerView({
         cart={cart}
         setCart={setCart}
         reservations={reservations}
+        orders={orders}
         tables={tables}
         onBookTable={() => {
           setShowCartModal(false);
