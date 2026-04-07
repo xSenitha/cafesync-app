@@ -1,10 +1,12 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Coffee, ShoppingCart, Plus, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle, Wallet, ShoppingBag } from 'lucide-react';
-import { useState } from 'react';
+import { Coffee, ShoppingCart, Plus, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle, Wallet, ShoppingBag, XCircle, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { FeedbackForm } from './FeedbackForm';
 import { ReservationForm } from './ReservationForm';
 import { PaymentModal } from './PaymentModal';
 import { CartModal } from './CartModal';
+
+import { API_BASE_URL } from '../../config';
 
 interface CustomerViewProps {
   activeTab: string;
@@ -56,6 +58,24 @@ export function CustomerView({
       setCart([...cart, { ...item, quantity: 1 }]);
     }
     addNotification(`${item.name} added to cart`, 'success');
+  };
+
+  const onCancelReservation = async (id: string) => {
+    if (!window.confirm('Are you sure you want to cancel this reservation?')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/reservations/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        onUpdate();
+        addNotification('Reservation cancelled successfully', 'success');
+      }
+    } catch (err) {
+      console.error('Cancel reservation error:', err);
+    }
   };
 
   const renderContent = () => {
@@ -257,6 +277,15 @@ export function CustomerView({
                       }`}>
                         {res.status}
                       </div>
+                      {(res.status === 'Pending' || res.status === 'Confirmed') && (
+                        <button 
+                          onClick={() => onCancelReservation(res._id)}
+                          className="p-2 hover:bg-red-50 text-red-400 rounded-xl transition-colors"
+                          title="Cancel Reservation"
+                        >
+                          <XCircle size={20} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -271,6 +300,7 @@ export function CustomerView({
               }}
               token={token}
               reservations={reservations}
+              orders={orders}
               tables={tables}
             />
           </div>
@@ -434,6 +464,7 @@ export function CustomerView({
         reservations={reservations}
         orders={orders}
         tables={tables}
+        user={user}
         onBookTable={() => {
           setShowCartModal(false);
           setActiveTab('reservations');

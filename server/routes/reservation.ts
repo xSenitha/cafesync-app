@@ -69,4 +69,25 @@ router.put('/:id', protect, async (req, res) => {
   }
 });
 
+// @route   DELETE /api/reservations/:id
+// @desc    Delete a reservation
+router.delete('/:id', protect, async (req: any, res) => {
+  try {
+    const reservation = await Reservation.findById(req.params.id);
+    if (!reservation) {
+      return res.status(404).json({ message: 'Reservation not found' });
+    }
+
+    // Only admin/staff or the user who created it can delete it
+    if (req.user.role !== 'admin' && req.user.role !== 'staff' && reservation.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    await Reservation.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Reservation removed' });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;

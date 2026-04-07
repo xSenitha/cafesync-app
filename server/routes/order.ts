@@ -28,15 +28,23 @@ const handlePaymentOnStatusUpdate = async (orderId: string, status: string, user
 };
 
 // @route   GET /api/orders
-// @desc    Get all orders
+// @desc    Get all orders (Admin sees all, Customer sees limited for availability)
 router.get('/', protect, async (req: any, res) => {
   try {
-    let query = {};
-    // Only admin, manager and staff can see all orders. Others see only their own.
-    if (!['admin', 'manager', 'staff'].includes(req.user.role)) {
-      query = { user: req.user._id };
+    let orders;
+    if (['admin', 'manager', 'staff'].includes(req.user.role)) {
+      orders = await Order.find().populate('items.menuItem').sort({ createdAt: -1 });
+    } else {
+      // For customers, return their own orders in full
+      // AND return other active orders but only with tableNumber and status for availability check
+      const myOrders = await Order.find({ user: req.user._id }).populate('items.menuItem').sort({ createdAt: -1 });
+      const activeOtherOrders = await Order.find({ 
+        user: { $ne: req.user._id },
+        status: { $in: ['Pending', 'Preparing', 'Ready', 'Served'] }
+      }, 'tableNumber status').sort({ createdAt: -1 });
+      
+      orders = [...myOrders, ...activeOtherOrders];
     }
-    const orders = await Order.find(query).populate('items.menuItem').sort({ createdAt: -1 });
     res.json(orders);
   } catch (err: any) {
     res.status(500).json({ message: err.message });

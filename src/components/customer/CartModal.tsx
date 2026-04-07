@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShoppingCart, Plus, Minus, Send, Trash2, Utensils, Calendar } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface CartModalProps {
   isOpen: boolean;
@@ -11,12 +11,13 @@ interface CartModalProps {
   reservations: any[];
   orders: any[];
   tables: any[];
+  user: any | null;
   onBookTable: () => void;
   loading: boolean;
   addNotification: (message: string, type: 'info' | 'success' | 'warning') => void;
 }
 
-export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reservations, orders, tables, onBookTable, loading, addNotification }: CartModalProps) {
+export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reservations, orders, tables, user, onBookTable, loading, addNotification }: CartModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [orderType, setOrderType] = useState<'Dine-In' | 'Takeaway' | 'Online'>('Dine-In');
   const [tableNumber, setTableNumber] = useState('');
@@ -60,11 +61,16 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
   };
 
   const getTableStatus = (num: number) => {
-    const hasActiveOrder = orders.some(o => 
+    const activeOrder = orders.find(o => 
       o.tableNumber === num && 
       ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
     );
-    if (hasActiveOrder) return 'Occupied';
+    
+    // If there's an active order, it's occupied UNLESS it belongs to the current user
+    if (activeOrder) {
+      if (activeOrder.user === user?._id) return 'Available'; // User can add to their own table
+      return 'Occupied';
+    }
 
     const now = new Date();
     const hasReservation = reservations.some(r => {
@@ -83,6 +89,12 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
 
     return 'Available';
   };
+
+  useEffect(() => {
+    if (tableNumber && getTableStatus(parseInt(tableNumber)) !== 'Available') {
+      setTableNumber('');
+    }
+  }, [orders, reservations, tables]);
 
   const resetModal = () => {
     setStep(1);

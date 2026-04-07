@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Users, Clock, CheckCircle, XCircle, Phone, User } from 'lucide-react';
+import { Calendar, Users, Clock, CheckCircle, XCircle, Phone, User, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
 interface ReservationManagementProps {
@@ -28,6 +28,23 @@ export function ReservationManagement({ reservations, tables, token, onUpdate }:
       }
     } catch (err) {
       console.error('Update reservation error:', err);
+    }
+  };
+
+  const deleteReservation = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this reservation?')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/reservations/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        onUpdate();
+      }
+    } catch (err) {
+      console.error('Delete reservation error:', err);
     }
   };
 
@@ -251,6 +268,13 @@ export function ReservationManagement({ reservations, tables, token, onUpdate }:
                           <XCircle size={18} />
                         </button>
                       )}
+                      <button 
+                        onClick={() => deleteReservation(res._id)}
+                        className="p-2 hover:bg-red-100 text-red-600 rounded-xl transition-colors"
+                        title="Delete Reservation"
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   </td>
                 </tr>
