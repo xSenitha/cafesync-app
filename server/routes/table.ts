@@ -1,0 +1,42 @@
+import express from 'express';
+import Table from '../models/Table.ts';
+import { protect, adminOnly } from '../middleware/auth.ts';
+
+const router = express.Router();
+
+// Get all tables
+router.get('/', async (req, res) => {
+  try {
+    const tables = await Table.find().sort({ number: 1 });
+    res.json(tables);
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Add a table (Admin only)
+router.post('/', protect, adminOnly, async (req, res) => {
+  const table = new Table({
+    number: req.body.number,
+    capacity: req.body.capacity
+  });
+
+  try {
+    const newTable = await table.save();
+    res.status(201).json(newTable);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Delete a table (Admin only)
+router.delete('/:id', protect, adminOnly, async (req, res) => {
+  try {
+    await Table.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Table deleted' });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+export default router;

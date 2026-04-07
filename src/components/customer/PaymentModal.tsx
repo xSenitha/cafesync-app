@@ -136,6 +136,46 @@ export function PaymentModal({ isOpen, onClose, order, token, onSuccess }: Payme
                     </div>
                   </div>
 
+                  {method === 'Card' && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-4 p-5 bg-stone-50 rounded-3xl border border-stone-100"
+                    >
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Card Number</label>
+                        <input 
+                          type="text" 
+                          placeholder="0000 0000 0000 0000"
+                          className="w-full px-4 py-3 bg-white border border-stone-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Expiry Date</label>
+                          <input 
+                            type="text" 
+                            placeholder="MM/YY"
+                            className="w-full px-4 py-3 bg-white border border-stone-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">CVV</label>
+                          <input 
+                            type="password" 
+                            placeholder="***"
+                            maxLength={3}
+                            className="w-full px-4 py-3 bg-white border border-stone-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 ml-1">
+                        <input type="checkbox" id="saveCard" className="rounded border-stone-300 text-amber-600 focus:ring-amber-500" />
+                        <label htmlFor="saveCard" className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Save card for future payments</label>
+                      </div>
+                    </motion.div>
+                  )}
+
                   {error && (
                     <div className="flex items-center gap-2 p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold">
                       <AlertCircle size={16} />

@@ -8,21 +8,34 @@ interface ReservationFormProps {
   onClose: () => void;
   onSuccess: () => void;
   token: string | null;
+  reservations: any[];
+  tables: any[];
 }
 
-export function ReservationForm({ isOpen, onClose, onSuccess, token }: ReservationFormProps) {
+export function ReservationForm({ isOpen, onClose, onSuccess, token, reservations, tables }: ReservationFormProps) {
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
-    tableNumber: 1,
+    tableNumber: 0,
     numberOfGuests: 2,
-    reservationDate: '',
+    reservationDate: new Date().toISOString().split('T')[0],
     reservationTime: '',
     notes: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const isTableReserved = (num: number) => {
+    if (!formData.reservationDate) return false;
+    return reservations.some(r => 
+      r.tableNumber === num && 
+      r.status === 'Confirmed' &&
+      new Date(r.reservationTime).toDateString() === new Date(formData.reservationDate).toDateString()
+    );
+  };
+
+  const availableTablesCount = tables.filter(t => !isTableReserved(t.number)).length;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,21 +203,61 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token }: Reservati
                         />
                       </div>
                     </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Table #</label>
-                      <div className="relative">
-                        <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-                        <input
-                          required
-                          type="number"
-                          min="1"
-                          max="50"
-                          value={formData.tableNumber}
-                          onChange={(e) => setFormData({ ...formData, tableNumber: parseInt(e.target.value) })}
-                          className="w-full pl-12 pr-4 py-3.5 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                        />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Select Table</label>
+                        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest ml-1">
+                          {availableTablesCount} Tables Available
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-stone-100 border border-stone-200" />
+                          <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">Free</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-100 border border-amber-200" />
+                          <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">Reserved</span>
+                        </div>
                       </div>
                     </div>
+                    <div className="grid grid-cols-6 gap-2">
+                      {tables.map((table) => {
+                        const reserved = isTableReserved(table.number);
+                        return (
+                          <button
+                            key={table._id}
+                            type="button"
+                            disabled={reserved}
+                            onClick={() => setFormData({ ...formData, tableNumber: table.number })}
+                            className={`py-2.5 rounded-xl text-[10px] font-black transition-all border-2 flex flex-col items-center gap-0.5 ${
+                              formData.tableNumber === table.number
+                                ? 'bg-stone-900 border-stone-900 text-white shadow-lg shadow-stone-900/20' 
+                                : reserved
+                                  ? 'bg-amber-50 border-amber-100 text-amber-700 cursor-not-allowed opacity-60'
+                                  : 'bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200'
+                            }`}
+                          >
+                            <span className="text-[8px] opacity-50">T</span>
+                            {table.number}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {tables.length === 0 && (
+                      <div className="text-center py-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest border-2 border-dashed border-stone-100 rounded-2xl">
+                        No tables configured.
+                      </div>
+                    )}
+                    {formData.tableNumber > 0 && isTableReserved(formData.tableNumber) && (
+                      <div className="flex items-center gap-2 p-3 bg-amber-50 text-amber-700 rounded-xl text-[9px] font-bold border border-amber-100">
+                        <AlertCircle size={14} />
+                        This table is already reserved for the selected date.
+                      </div>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">

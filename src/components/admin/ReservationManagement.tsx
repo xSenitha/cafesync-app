@@ -4,11 +4,15 @@ import { API_BASE_URL } from '../../config';
 
 interface ReservationManagementProps {
   reservations: any[];
+  tables: any[];
   token: string | null;
   onUpdate: () => void;
 }
 
-export function ReservationManagement({ reservations, token, onUpdate }: ReservationManagementProps) {
+export function ReservationManagement({ reservations, tables, token, onUpdate }: ReservationManagementProps) {
+  const [newTableNumber, setNewTableNumber] = React.useState('');
+  const [newTableCapacity, setNewTableCapacity] = React.useState('4');
+
   const updateStatus = async (id: string, status: string) => {
     try {
       const res = await fetch(`${API_BASE_URL}/api/reservations/${id}`, {
@@ -27,9 +31,111 @@ export function ReservationManagement({ reservations, token, onUpdate }: Reserva
     }
   };
 
+  const addTable = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/tables`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ 
+          number: parseInt(newTableNumber),
+          capacity: parseInt(newTableCapacity)
+        })
+      });
+      if (res.ok) {
+        setNewTableNumber('');
+        onUpdate();
+      }
+    } catch (err) {
+      console.error('Add table error:', err);
+    }
+  };
+
+  const deleteTable = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this table?')) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/tables/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        onUpdate();
+      }
+    } catch (err) {
+      console.error('Delete table error:', err);
+    }
+  };
+
   return (
-    <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="space-y-8">
+      {/* Table Management Section */}
+      <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h3 className="text-lg font-black text-stone-800">Table Management</h3>
+            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Manage your restaurant layout</p>
+          </div>
+          <form onSubmit={addTable} className="flex items-center gap-3">
+            <input 
+              type="number"
+              placeholder="Table #"
+              value={newTableNumber}
+              onChange={(e) => setNewTableNumber(e.target.value)}
+              className="w-24 bg-stone-50 border border-stone-100 rounded-xl px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              required
+            />
+            <input 
+              type="number"
+              placeholder="Capacity"
+              value={newTableCapacity}
+              onChange={(e) => setNewTableCapacity(e.target.value)}
+              className="w-24 bg-stone-50 border border-stone-100 rounded-xl px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              required
+            />
+            <button 
+              type="submit"
+              className="bg-stone-900 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-stone-800 transition-colors"
+            >
+              Add Table
+            </button>
+          </form>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+          {tables.map((table) => (
+            <div key={table._id} className="group relative bg-stone-50 border border-stone-100 rounded-2xl p-4 flex flex-col items-center gap-1">
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Table</span>
+              <span className="text-xl font-black text-stone-800">{table.number}</span>
+              <span className="text-[9px] font-bold text-stone-400 uppercase tracking-widest">{table.capacity} Seats</span>
+              
+              <button 
+                onClick={() => deleteTable(table._id)}
+                className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              >
+                <XCircle size={12} />
+              </button>
+            </div>
+          ))}
+          {tables.length === 0 && (
+            <div className="col-span-full py-8 text-center text-stone-400 text-xs font-bold uppercase tracking-widest">
+              No tables configured yet.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Reservations List */}
+      <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden">
+        <div className="p-8 border-b border-stone-100">
+          <h3 className="text-lg font-black text-stone-800">Active Reservations</h3>
+          <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Monitor and manage guest bookings</p>
+        </div>
+        <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-100">
@@ -124,6 +230,7 @@ export function ReservationManagement({ reservations, token, onUpdate }: Reserva
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 }

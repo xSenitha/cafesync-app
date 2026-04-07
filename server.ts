@@ -24,6 +24,7 @@ import MenuItem from './server/models/MenuItem.ts';
 import Order from './server/models/Order.ts';
 import Payment from './server/models/Payment.ts';
 import Reservation from './server/models/Reservation.ts';
+import Table from './server/models/Table.ts';
 
 // Seed Data Function
 const seedData = async () => {
@@ -46,9 +47,23 @@ const seedData = async () => {
         role: 'customer'
       });
       await customer.save();
+    }
 
-      const menuCount = await MenuItem.countDocuments();
+    const tableCount = await Table.countDocuments();
+    if (tableCount === 0) {
+      console.log('🌱 Seeding initial tables...');
+      const tables = [];
+      for (let i = 1; i <= 12; i++) {
+        tables.push({ number: i, capacity: i % 2 === 0 ? 4 : 2 });
+      }
+      await Table.insertMany(tables);
+    }
+
+    const menuCount = await MenuItem.countDocuments();
       if (menuCount === 0) {
+        const customer = await User.findOne({ role: 'customer' });
+        if (!customer) return;
+
         console.log('🌱 Seeding initial menu items...');
         const items = await MenuItem.insertMany([
           { name: 'Cappuccino', price: 450, category: 'Beverage', description: 'Rich espresso with steamed milk foam', stockQuantity: 50 },
@@ -97,7 +112,6 @@ const seedData = async () => {
 
         console.log('✅ Database Seeded Successfully');
       }
-    }
   } catch (err) {
     console.error('❌ Seeding error:', err);
   }
@@ -138,6 +152,7 @@ import orderRoutes from './server/routes/order.ts';
 import paymentRoutes from './server/routes/payment.ts';
 import reservationRoutes from './server/routes/reservation.ts';
 import feedbackRoutes from './server/routes/feedback.ts';
+import tableRoutes from './server/routes/table.ts';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
@@ -145,6 +160,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/tables', tableRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ 

@@ -14,6 +14,7 @@ import { InventoryManagement } from './components/admin/InventoryManagement';
 import { ReservationManagement } from './components/admin/ReservationManagement';
 import { StaffManagement } from './components/admin/StaffManagement';
 import { FeedbackManagement } from './components/admin/FeedbackManagement';
+import { PaymentManagement } from './components/admin/PaymentManagement';
 import { CustomerView } from './components/customer/CustomerView';
 import { AddItemModal } from './components/admin/AddItemModal';
 import { About } from './components/admin/About';
@@ -38,12 +39,12 @@ export default function App() {
   const [payments, setPayments] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
+  const [tables, setTables] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
 
   // Customer states
   const [cart, setCart] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedTable, setSelectedTable] = useState<number | null>(null);
 
   // Form states
   const [email, setEmail] = useState('');
@@ -72,7 +73,7 @@ export default function App() {
   const fetchData = async () => {
     const headers = { 'Authorization': `Bearer ${token}` };
     try {
-      if (activeTab === 'menu' || activeTab === 'dashboard') {
+      if (activeTab === 'menu' || activeTab === 'dashboard' || activeTab === 'reservations') {
         const res = await fetch(`${API_BASE_URL}/api/menu`, { headers });
         const data = await res.json();
         setMenuItems(Array.isArray(data) ? data : []);
@@ -91,6 +92,10 @@ export default function App() {
         const res = await fetch(`${API_BASE_URL}/api/reservations`, { headers });
         const data = await res.json();
         setReservations(Array.isArray(data) ? data : []);
+        
+        const tablesRes = await fetch(`${API_BASE_URL}/api/tables`, { headers });
+        const tablesData = await tablesRes.json();
+        setTables(Array.isArray(tablesData) ? tablesData : []);
       }
       if (activeTab === 'feedback' || activeTab === 'dashboard') {
         const res = await fetch(`${API_BASE_URL}/api/feedback`, { headers });
@@ -141,6 +146,18 @@ export default function App() {
           });
 
           setOrders(ordersData);
+        }
+
+        // Fetch Payments
+        const paymentsRes = await fetch(`${API_BASE_URL}/api/payments`, { headers });
+        const paymentsData = await paymentsRes.json();
+        if (Array.isArray(paymentsData)) {
+          // Check for new payments (only for admin)
+          if (viewMode === 'admin' && paymentsData.length > payments.length) {
+            const newPayment = paymentsData[0];
+            addNotification(`New Payment received! Rs. ${newPayment.amount}`, 'success');
+          }
+          setPayments(paymentsData);
         }
 
         // Fetch Menu (Inventory)
@@ -244,11 +261,7 @@ export default function App() {
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (!selectedTable) {
-      addNotification('Please select a table number first', 'warning');
-      return;
-    }
+  const handlePlaceOrder = async (orderData: any) => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/orders`, {
@@ -258,14 +271,14 @@ export default function App() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          tableNumber: selectedTable,
-          items: cart.map(item => ({
+          tableNumber: orderData.tableNumber,
+          items: orderData.items.map((item: any) => ({
             menuItem: item._id,
             quantity: item.quantity,
             price: item.price
           })),
-          totalAmount: cart.reduce((acc, item) => acc + (item.price * item.quantity), 0),
-          orderType: 'Dine-in'
+          totalAmount: orderData.totalAmount,
+          orderType: orderData.orderType
         })
       });
       if (res.ok) {
@@ -329,13 +342,14 @@ export default function App() {
                   menuItems={menuItems} 
                   orders={orders}
                   reservations={reservations}
+                  tables={tables}
                   payments={payments}
                   cart={cart} setCart={setCart} 
                   selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
-                  selectedTable={selectedTable} setSelectedTable={setSelectedTable}
                   onPlaceOrder={handlePlaceOrder}
                   token={token}
                   onUpdate={fetchData}
+                  setActiveTab={setActiveTab}
                   loading={loading}
                   addNotification={addNotification}
                 />
@@ -378,22 +392,11 @@ export default function App() {
                     {activeTab === 'menu' && <MenuManagement menuItems={menuItems} token={token} onUpdateMenu={fetchData} onEditItem={(item) => { setEditingItem(item); setShowAddItemModal(true); }} />}
                     {activeTab === 'orders' && <OrderManagement orders={orders} token={token} onUpdateOrder={fetchData} />}
                     {activeTab === 'inventory' && <InventoryManagement menuItems={menuItems} token={token} onUpdate={fetchData} />}
-                    {activeTab === 'reservations' && <ReservationManagement reservations={reservations} token={token} onUpdate={fetchData} />}
+                    {activeTab === 'reservations' && <ReservationManagement reservations={reservations} tables={tables} token={token} onUpdate={fetchData} />}
+                    {activeTab === 'payments' && <PaymentManagement payments={payments} token={token} />}
                     {activeTab === 'staff' && <StaffManagement token={token} currentUser={user} />}
                     {activeTab === 'feedback' && <FeedbackManagement feedback={feedback} />}
                     {activeTab === 'about' && <About />}
-                    
-                    {(activeTab === 'payments') && (
-                      <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
-                        <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
-                          {activeTab === 'payments' && <CreditCard size={40} />}
-                        </div>
-                        <h3 className="text-xl font-black text-stone-800">Module Ready for Integration</h3>
-                        <p className="text-stone-400 text-sm mt-2 max-w-md mx-auto">
-                          This module is fully configured in the backend. Connect your React Native components to the <code>/api/{activeTab}</code> endpoint to start managing data.
-                        </p>
-                      </div>
-                    )}
                   </motion.div>
                 </AnimatePresence>
               )}

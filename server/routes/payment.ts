@@ -7,12 +7,13 @@ const router = express.Router();
 
 // @route   POST /api/payments
 // @desc    Process a payment
-router.post('/', protect, async (req, res) => {
+router.post('/', protect, async (req: any, res) => {
   try {
     const { orderId, amount, paymentMethod } = req.body;
 
     const newPayment = new Payment({
       orderId,
+      user: req.user._id,
       amount,
       paymentMethod,
       status: 'Completed',
@@ -31,9 +32,14 @@ router.post('/', protect, async (req, res) => {
 
 // @route   GET /api/payments
 // @desc    Get payment history
-router.get('/', protect, async (req, res) => {
+router.get('/', protect, async (req: any, res) => {
   try {
-    const payments = await Payment.find().populate('orderId');
+    let query = {};
+    // Only admin, manager and staff can see all payments. Others see only their own.
+    if (!['admin', 'manager', 'staff'].includes(req.user.role)) {
+      query = { user: req.user._id };
+    }
+    const payments = await Payment.find(query).populate('orderId').sort({ paidAt: -1, createdAt: -1 });
     res.json(payments);
   } catch (err: any) {
     res.status(500).json({ message: err.message });

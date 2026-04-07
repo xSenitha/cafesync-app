@@ -1,36 +1,38 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Coffee, ShoppingCart, Utensils, Plus, Minus, ChevronRight, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle, Wallet } from 'lucide-react';
+import { Coffee, ShoppingCart, Plus, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle, Wallet, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
 import { FeedbackForm } from './FeedbackForm';
 import { ReservationForm } from './ReservationForm';
 import { PaymentModal } from './PaymentModal';
+import { CartModal } from './CartModal';
 
 interface CustomerViewProps {
   activeTab: string;
   menuItems: any[];
   orders: any[];
   reservations: any[];
+  tables: any[];
   payments: any[];
   cart: any[];
   setCart: (cart: any[]) => void;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
-  selectedTable: number | null;
-  setSelectedTable: (table: number | null) => void;
-  onPlaceOrder: () => void;
+  onPlaceOrder: (orderData: any) => void;
   token: string | null;
   onUpdate: () => void;
+  setActiveTab: (tab: string) => void;
   loading: boolean;
   addNotification: (message: string, type: 'info' | 'success' | 'warning') => void;
 }
 
 export function CustomerView({ 
-  activeTab, menuItems, orders, reservations, payments, cart, setCart, 
-  selectedCategory, setSelectedCategory, selectedTable, setSelectedTable, onPlaceOrder,
-  token, onUpdate, loading, addNotification
+  activeTab, menuItems, orders, reservations, tables, payments, cart, setCart, 
+  selectedCategory, setSelectedCategory, onPlaceOrder,
+  token, onUpdate, setActiveTab, loading, addNotification
 }: CustomerViewProps) {
   const [showFeedbackForm, setShowFeedbackForm] = useState<string | null>(null);
   const [showReservationForm, setShowReservationForm] = useState(false);
+  const [showCartModal, setShowCartModal] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<any | null>(null);
   const categories = ['All', ...new Set(menuItems.map((item: any) => item.category))];
   const filteredItems = selectedCategory === 'All' 
@@ -55,49 +57,17 @@ export function CustomerView({
     addNotification(`${item.name} added to cart`, 'success');
   };
 
-  const removeFromCart = (itemId: string) => {
-    const existing = cart.find((c: any) => c._id === itemId);
-    if (!existing) return;
-    if (existing.quantity > 1) {
-      setCart(cart.map((c: any) => c._id === itemId ? { ...c, quantity: c.quantity - 1 } : c));
-    } else {
-      setCart(cart.filter((c: any) => c._id !== itemId));
-    }
-  };
-
-  const total = cart.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0);
-
   const renderContent = () => {
     switch (activeTab) {
       case 'menu':
       case 'dashboard':
         return (
-          <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
+          <div className="flex flex-col gap-6 sm:gap-8">
             <div className="flex-1 space-y-6 sm:space-y-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
                 <div>
                   <h2 className="text-2xl sm:text-3xl font-black text-stone-800">Fresh Menu</h2>
                   <p className="text-stone-400 text-xs sm:text-sm font-medium mt-1">Select your favorite items and place an order.</p>
-                </div>
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <button 
-                    onClick={() => setShowReservationForm(true)}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-2 bg-amber-50 hover:bg-amber-100 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-700 transition-all border border-amber-100"
-                  >
-                    <Calendar size={14} />
-                    Book Table
-                  </button>
-                  <div className={`flex-1 sm:flex-none flex items-center gap-2 sm:gap-4 bg-white p-1.5 sm:p-2 rounded-2xl border ${!selectedTable ? 'border-amber-500 animate-pulse' : 'border-stone-100'} shadow-sm`}>
-                    <label className="text-[9px] sm:text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1 sm:ml-2">Table</label>
-                    <select 
-                      value={selectedTable || ''} 
-                      onChange={(e) => setSelectedTable(Number(e.target.value))}
-                      className="bg-stone-50 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500 w-full sm:w-auto"
-                    >
-                      <option value="">Select</option>
-                      {[1,2,3,4,5,6,7,8].map(n => <option key={n} value={n}>T-{n}</option>)}
-                    </select>
-                  </div>
                 </div>
               </div>
 
@@ -159,70 +129,8 @@ export function CustomerView({
                 ))}
               </div>
             </div>
-
-            {/* Cart Sidebar */}
-            <div className="lg:w-80 flex-shrink-0">
-              <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-stone-100 shadow-sm lg:sticky lg:top-24">
-                <div className="flex items-center gap-3 mb-6 sm:mb-8">
-                  <div className="bg-amber-100 p-2 sm:p-2.5 rounded-xl text-amber-700">
-                    <ShoppingCart size={18} className="sm:w-5 sm:h-5" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-black text-stone-800">Your Order</h3>
-                </div>
-
-                <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2 scrollbar-hide">
-                  {cart.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="bg-stone-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-300">
-                        <Utensils size={32} />
-                      </div>
-                      <p className="text-xs font-bold text-stone-400 uppercase tracking-widest">Cart is empty</p>
-                    </div>
-                  ) : (
-                    cart.map((item: any) => (
-                      <div key={item._id} className="flex items-center justify-between group">
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-stone-800">{item.name}</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Rs. {item.price * item.quantity}</p>
-                            <span className="text-[9px] font-bold text-stone-400">({item.stockQuantity} Left)</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 bg-stone-50 p-1.5 rounded-xl border border-stone-100">
-                          <button onClick={() => removeFromCart(item._id)} className="p-1 hover:bg-white hover:shadow-sm rounded-lg transition-all text-stone-400 hover:text-stone-900">
-                            <Minus size={14} />
-                          </button>
-                          <span className="text-xs font-black text-stone-800 w-4 text-center">{item.quantity}</span>
-                          <button onClick={() => addToCart(item)} className="p-1 hover:bg-white hover:shadow-sm rounded-lg transition-all text-stone-400 hover:text-stone-900">
-                            <Plus size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {cart.length > 0 && (
-                  <div className="mt-8 pt-8 border-t border-stone-100 space-y-6">
-                    <div className="flex justify-between items-center">
-                      <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Total Amount</p>
-                      <p className="text-2xl font-black text-stone-800">Rs. {total}</p>
-                    </div>
-                    <button 
-                      onClick={onPlaceOrder}
-                      disabled={loading}
-                      className="w-full bg-stone-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-xl shadow-stone-900/10 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {loading ? 'Placing Order...' : 'Place Order'}
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         );
-
       case 'orders':
         return (
           <div className="space-y-8">
@@ -370,50 +278,88 @@ export function CustomerView({
                 setShowReservationForm(false);
               }}
               token={token}
+              reservations={reservations}
+              tables={tables}
             />
           </div>
         );
 
       case 'payments':
+        const pendingOrders = orders.filter((o: any) => o.status !== 'Paid' && o.status !== 'Cancelled');
         return (
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-3xl font-black text-stone-800">Payment History</h2>
-              <p className="text-stone-400 text-sm font-medium mt-1">Review your past transactions.</p>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {payments.length === 0 ? (
-                <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
-                  <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
-                    <CreditCard size={40} />
-                  </div>
-                  <h3 className="text-xl font-black text-stone-800">No payments</h3>
-                  <p className="text-stone-400 text-sm mt-2">Your payment history will appear here.</p>
+          <div className="space-y-12">
+            {/* Pending Payments */}
+            {pendingOrders.length > 0 && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-black text-stone-800">Pending Payments</h2>
+                  <p className="text-stone-400 text-xs font-medium mt-1">Select an order below to complete your payment.</p>
                 </div>
-              ) : (
-                payments.map((payment: any) => (
-                  <div key={payment._id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-700">
-                        <CheckCircle size={24} />
+                <div className="grid grid-cols-1 gap-4">
+                  {pendingOrders.map((order: any) => (
+                    <div key={order._id} className="bg-amber-50/50 p-6 rounded-[2rem] border border-amber-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-amber-100 p-3 rounded-2xl text-amber-700">
+                          <Clock size={24} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-stone-800">Order #{order._id.slice(-6).toUpperCase()}</p>
+                          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Total: Rs. {order.totalAmount}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-black text-stone-800">Payment Successful</p>
-                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{new Date(payment.createdAt).toLocaleString()}</p>
-                      </div>
+                      <button 
+                        onClick={() => setSelectedOrderForPayment(order)}
+                        className="bg-stone-900 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-stone-900/10 flex items-center gap-2"
+                      >
+                        <CreditCard size={16} />
+                        Pay Now
+                      </button>
                     </div>
-                    <div className="flex items-center gap-8">
-                      <div className="text-right">
-                        <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Amount Paid</p>
-                        <p className="text-lg font-black text-stone-800">Rs. {payment.amount}</p>
-                      </div>
-                      <div className="px-4 py-2 bg-stone-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-stone-400">
-                        {payment.paymentMethod}
-                      </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Payment History */}
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-black text-stone-800">Payment History</h2>
+                <p className="text-stone-400 text-xs font-medium mt-1">Review your past transactions.</p>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {payments.length === 0 ? (
+                  <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
+                    <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
+                      <CreditCard size={40} />
                     </div>
+                    <h3 className="text-xl font-black text-stone-800">No payments</h3>
+                    <p className="text-stone-400 text-sm mt-2">Your payment history will appear here.</p>
                   </div>
-                ))
-              )}
+                ) : (
+                  payments.map((payment: any) => (
+                    <div key={payment._id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-700">
+                          <CheckCircle size={24} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-stone-800">Payment Successful</p>
+                          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{new Date(payment.createdAt).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-8">
+                        <div className="text-right">
+                          <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Amount Paid</p>
+                          <p className="text-lg font-black text-stone-800">Rs. {payment.amount}</p>
+                        </div>
+                        <div className="px-4 py-2 bg-stone-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-stone-400">
+                          {payment.paymentMethod}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         );
@@ -432,15 +378,62 @@ export function CustomerView({
   };
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-      >
-        {renderContent()}
-      </motion.div>
-    </AnimatePresence>
+    <div className="relative min-h-[calc(100vh-120px)]">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {renderContent()}
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Floating Cart Button - Accessible from any tab */}
+      <AnimatePresence>
+        {cart.length > 0 && activeTab !== 'orders' && (
+          <motion.button
+            initial={{ scale: 0, y: 20, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0, y: 20, opacity: 0 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowCartModal(true)}
+            className="fixed bottom-8 right-6 sm:right-10 z-[100] bg-stone-900 text-white p-4 sm:p-5 rounded-[2rem] shadow-2xl flex items-center gap-3 border border-white/10"
+          >
+            <div className="relative">
+              <ShoppingBag size={24} strokeWidth={2.5} />
+              <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-stone-900">
+                {cart.reduce((acc, item) => acc + item.quantity, 0)}
+              </span>
+            </div>
+            <span className="text-xs font-black uppercase tracking-widest hidden sm:block">View Order</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen Cart Modal */}
+      <CartModal 
+        isOpen={showCartModal}
+        onClose={() => setShowCartModal(false)}
+        cart={cart}
+        setCart={setCart}
+        reservations={reservations}
+        tables={tables}
+        onBookTable={() => {
+          setShowCartModal(false);
+          setActiveTab('reservations');
+          setShowReservationForm(true);
+        }}
+        onPlaceOrder={(orderData) => {
+          onPlaceOrder(orderData);
+          setShowCartModal(false);
+        }}
+        loading={loading}
+        addNotification={addNotification}
+      />
+    </div>
   );
 }
