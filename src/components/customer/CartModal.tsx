@@ -61,20 +61,26 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
   };
 
   const getTableStatus = (num: number) => {
+    if (!orders || !Array.isArray(orders)) return 'Available';
+
     const activeOrder = orders.find(o => 
-      o.tableNumber === num && 
+      o && o.tableNumber === num && 
       ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
     );
     
     // If there's an active order, it's occupied UNLESS it belongs to the current user
     if (activeOrder) {
-      if (activeOrder.user === user?._id) return 'Available'; // User can add to their own table
+      // Check both id and _id as backend might return either
+      const userId = user?.id || user?._id;
+      if (activeOrder.user === userId) return 'Available'; // User can add to their own table
       return 'Occupied';
     }
 
+    if (!reservations || !Array.isArray(reservations)) return 'Available';
+
     const now = new Date();
     const hasReservation = reservations.some(r => {
-      if (r.tableNumber !== num || (r.status !== 'Confirmed' && r.status !== 'Pending')) return false;
+      if (!r || r.tableNumber !== num || (r.status !== 'Confirmed' && r.status !== 'Pending')) return false;
       
       const resTime = new Date(r.reservationTime);
       const diffMs = resTime.getTime() - now.getTime();

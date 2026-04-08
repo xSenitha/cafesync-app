@@ -82,13 +82,14 @@ export function CustomerView({
     }
   }, [showCartModal, showReservationForm, showFeedbackForm, selectedOrderForPayment]);
 
-  const categories = ['All', ...new Set(menuItems.map((item: any) => item.category))];
-  const filteredItems = selectedCategory === 'All' 
-    ? menuItems 
-    : menuItems.filter((item: any) => item.category === selectedCategory);
+  const categories = ['All', ...(Array.isArray(menuItems) ? [...new Set(menuItems.map((item: any) => item.category))] : [])];
+  const filteredItems = Array.isArray(menuItems) 
+    ? (selectedCategory === 'All' ? menuItems : menuItems.filter((item: any) => item.category === selectedCategory))
+    : [];
 
   const addToCart = (item: any) => {
-    const existing = cart.find((c: any) => c._id === item._id);
+    if (!Array.isArray(cart)) return;
+    const existing = cart.find((c: any) => c && c._id === item._id);
     if (existing) {
       if (existing.quantity >= item.stockQuantity) {
         addNotification(`Only ${item.stockQuantity} items available in stock`, 'warning');

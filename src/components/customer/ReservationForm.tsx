@@ -35,9 +35,9 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
     
     // 1. Check if table is currently occupied by an order (if booking for today and close to now)
     const isToday = selectedTime.toDateString() === now.toDateString();
-    if (isToday) {
+    if (isToday && orders && Array.isArray(orders)) {
       const activeOrder = orders.find(o => 
-        o.tableNumber === num && 
+        o && o.tableNumber === num && 
         ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
       );
       
@@ -50,8 +50,10 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
     }
 
     // 2. Check for other reservations in a 2-hour window
+    if (!reservations || !Array.isArray(reservations)) return false;
+
     return reservations.some(r => {
-      if (r.tableNumber !== num || r.status === 'Cancelled' || r.status === 'Completed') return false;
+      if (!r || r.tableNumber !== num || r.status === 'Cancelled' || r.status === 'Completed') return false;
       
       const resTime = new Date(r.reservationTime);
       const diffMs = Math.abs(selectedTime.getTime() - resTime.getTime());

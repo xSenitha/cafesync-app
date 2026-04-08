@@ -132,24 +132,34 @@ export default function App() {
   }, [token, activeTab]);
 
   const fetchData = async () => {
+    if (!token) return;
     const headers = { 'Authorization': `Bearer ${token}` };
+    const isCustomer = user?.role === 'customer';
+
     try {
-      if (activeTab === 'menu' || activeTab === 'dashboard' || activeTab === 'reservations') {
+      // Menu items are needed for both admin and customer (menu/dashboard)
+      if (activeTab === 'menu' || activeTab === 'dashboard' || activeTab === 'reservations' || isCustomer) {
         const res = await fetch(`${API_BASE_URL}/api/menu`, { headers });
         const data = await res.json();
         setMenuItems(Array.isArray(data) ? data : []);
       }
-      if (activeTab === 'orders' || activeTab === 'dashboard') {
+
+      // Orders are needed for admin (orders/dashboard) and customer (for table availability)
+      if (activeTab === 'orders' || activeTab === 'dashboard' || isCustomer) {
         const res = await fetch(`${API_BASE_URL}/api/orders`, { headers });
         const data = await res.json();
         setOrders(Array.isArray(data) ? data : []);
       }
-      if (activeTab === 'payments' || activeTab === 'dashboard') {
+
+      // Payments are needed for admin (payments/dashboard) and customer (payment history)
+      if (activeTab === 'payments' || activeTab === 'dashboard' || (isCustomer && activeTab === 'payments')) {
         const res = await fetch(`${API_BASE_URL}/api/payments`, { headers });
         const data = await res.json();
         setPayments(Array.isArray(data) ? data : []);
       }
-      if (activeTab === 'reservations' || activeTab === 'dashboard') {
+
+      // Reservations and Tables are CRITICAL for customer table selection in cart
+      if (activeTab === 'reservations' || activeTab === 'dashboard' || isCustomer) {
         const res = await fetch(`${API_BASE_URL}/api/reservations`, { headers });
         const data = await res.json();
         setReservations(Array.isArray(data) ? data : []);
@@ -158,7 +168,9 @@ export default function App() {
         const tablesData = await tablesRes.json();
         setTables(Array.isArray(tablesData) ? tablesData : []);
       }
-      if (activeTab === 'feedback' || activeTab === 'dashboard') {
+
+      // Feedback is needed for admin (feedback/dashboard) and customer (feedback tab)
+      if (activeTab === 'feedback' || activeTab === 'dashboard' || (isCustomer && activeTab === 'feedback')) {
         const res = await fetch(`${API_BASE_URL}/api/feedback`, { headers });
         const data = await res.json();
         setFeedback(Array.isArray(data) ? data : []);
