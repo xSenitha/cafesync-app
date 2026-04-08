@@ -264,13 +264,15 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
                                   ? 'bg-red-50 border-red-100 text-red-700 cursor-not-allowed opacity-60'
                                   : status === 'Reserved'
                                     ? 'bg-amber-50 border-amber-100 text-amber-700 cursor-not-allowed opacity-60'
-                                    : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200 hover:bg-stone-50'
+                                    : status === 'Cleaning'
+                                      ? 'bg-purple-50 border-purple-100 text-purple-700 cursor-not-allowed opacity-60'
+                                      : 'bg-white border-stone-100 text-stone-400 hover:border-stone-200 hover:bg-stone-50'
                             }`}
                           >
                             <span className="text-[8px] sm:text-[10px] opacity-50 uppercase tracking-tighter">Table</span>
                             {table.number}
                             <span className="text-[8px] opacity-50 font-medium">
-                              {status === 'Occupied' ? 'Occupied' : status === 'Reserved' ? 'Reserved' : `${table.capacity} Seats`}
+                              {status === 'Occupied' ? 'Occupied' : status === 'Reserved' ? 'Reserved' : status === 'Cleaning' ? 'Cleaning' : `${table.capacity} Seats`}
                             </span>
                           </button>
                         );
@@ -295,6 +297,10 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-amber-50 border-2 border-amber-100" />
                       <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Reserved</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-purple-50 border-2 border-purple-100" />
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Cleaning</span>
                     </div>
                   </div>
                 </div>

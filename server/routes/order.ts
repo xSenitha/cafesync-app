@@ -83,17 +83,42 @@ router.post('/', protect, async (req: any, res) => {
 });
 
 // @route   PUT /api/orders/:id
-// @desc    Update order status
-router.put('/:id', protect, staffOrAbove, async (req: any, res) => {
+// @desc    Update order (Staff updates status, Customer updates content if pending)
+router.put('/:id', protect, async (req: any, res) => {
   try {
-    const { status } = req.body;
-    await handlePaymentOnStatusUpdate(req.params.id, status, req.user);
-    
-    const updatedOrder = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    const isStaff = ['admin', 'manager', 'staff'].includes(req.user.role);
+    const isOwner = order.user.toString() === req.user._id.toString();
+
+    if (isStaff) {
+      // Staff can update status
+      if (req.body.status) {
+        await handlePaymentOnStatusUpdate(req.params.id, req.body.status, req.user);
+        order.status = req.body.status;
+      }
+      // Staff might also update content if needed, but usually it's status
+      if (req.body.items) order.items = req.body.items;
+      if (req.body.tableNumber) order.tableNumber = req.body.tableNumber;
+      if (req.body.totalAmount) order.totalAmount = req.body.totalAmount;
+      if (req.body.orderType) order.orderType = req.body.orderType;
+    } else if (isOwner) {
+      // Customer can only update if status is Pending
+      if (order.status !== 'Pending') {
+        return res.status(400).json({ message: 'Cannot edit order after it has been processed' });
+      }
+      
+      // Update content
+      if (req.body.items) order.items = req.body.items;
+      if (req.body.tableNumber) order.tableNumber = req.body.tableNumber;
+      if (req.body.totalAmount) order.totalAmount = req.body.totalAmount;
+      if (req.body.orderType) order.orderType = req.body.orderType;
+    } else {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    const updatedOrder = await order.save();
     res.json(updatedOrder);
   } catch (err: any) {
     res.status(400).json({ message: err.message });

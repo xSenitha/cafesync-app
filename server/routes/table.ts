@@ -1,6 +1,6 @@
 import express from 'express';
 import Table from '../models/Table.ts';
-import { protect, adminOnly } from '../middleware/auth.ts';
+import { protect, adminOnly, staffOrAbove } from '../middleware/auth.ts';
 
 const router = express.Router();
 
@@ -24,6 +24,20 @@ router.post('/', protect, adminOnly, async (req, res) => {
   try {
     const newTable = await table.save();
     res.status(201).json(newTable);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Update table status (Staff or above)
+router.put('/:id', protect, staffOrAbove, async (req, res) => {
+  try {
+    const updatedTable = await Table.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+    res.json(updatedTable);
   } catch (err: any) {
     res.status(400).json({ message: err.message });
   }
