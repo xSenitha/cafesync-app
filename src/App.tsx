@@ -475,7 +475,7 @@ export default function App() {
                           {activeTab === 'about' && 'Learn more about CafeSync and the development team.'}
                         </p>
                       </div>
-                      {activeTab !== 'dashboard' && activeTab !== 'about' && activeTab !== 'staff' && (
+                      {activeTab !== 'dashboard' && activeTab !== 'about' && activeTab !== 'staff' && activeTab !== 'reservations' && (
                         <button 
                           onClick={() => { if (activeTab === 'menu' || activeTab === 'inventory') setShowAddItemModal(true); }}
                           className="bg-stone-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-black transition-all flex items-center gap-2 shadow-xl shadow-stone-900/10 active:scale-95"

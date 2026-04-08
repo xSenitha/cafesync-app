@@ -29,12 +29,23 @@ router.post('/', protect, adminOnly, async (req, res) => {
   }
 });
 
-// Update table status (Staff or above)
-router.put('/:id', protect, staffOrAbove, async (req, res) => {
+// Update table (Staff or above for status, Admin for number/capacity)
+router.put('/:id', protect, staffOrAbove, async (req: any, res) => {
   try {
+    const updateData: any = {};
+    
+    // Staff can update status
+    if (req.body.status) updateData.status = req.body.status;
+    
+    // Admin can update number and capacity
+    if (req.user.role === 'admin') {
+      if (req.body.number) updateData.number = req.body.number;
+      if (req.body.capacity) updateData.capacity = req.body.capacity;
+    }
+
     const updatedTable = await Table.findByIdAndUpdate(
       req.params.id,
-      { status: req.body.status },
+      { $set: updateData },
       { new: true }
     );
     res.json(updatedTable);
