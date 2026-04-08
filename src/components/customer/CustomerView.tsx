@@ -37,6 +37,45 @@ export function CustomerView({
   const [showReservationForm, setShowReservationForm] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<any | null>(null);
+
+  // Handle Browser Back Button for Customer Modals
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state) {
+        if (event.state.showCartModal !== undefined) setShowCartModal(event.state.showCartModal);
+        if (event.state.showReservationForm !== undefined) setShowReservationForm(event.state.showReservationForm);
+        if (event.state.showFeedbackForm !== undefined) setShowFeedbackForm(event.state.showFeedbackForm);
+        if (event.state.isPaymentModalOpen === false) setSelectedOrderForPayment(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Sync modal states to history
+  useEffect(() => {
+    const currentState = window.history.state;
+    if (!currentState) return;
+
+    const isPaymentModalOpen = !!selectedOrderForPayment;
+    const hasChanged = 
+      currentState.showCartModal !== showCartModal ||
+      currentState.showReservationForm !== showReservationForm ||
+      currentState.showFeedbackForm !== showFeedbackForm ||
+      currentState.isPaymentModalOpen !== isPaymentModalOpen;
+
+    if (hasChanged) {
+      window.history.pushState({ 
+        ...currentState, 
+        showCartModal, 
+        showReservationForm, 
+        showFeedbackForm,
+        isPaymentModalOpen
+      }, '');
+    }
+  }, [showCartModal, showReservationForm, showFeedbackForm, selectedOrderForPayment]);
+
   const categories = ['All', ...new Set(menuItems.map((item: any) => item.category))];
   const filteredItems = selectedCategory === 'All' 
     ? menuItems 

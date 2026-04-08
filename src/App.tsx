@@ -42,6 +42,40 @@ export default function App() {
   const [tables, setTables] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
 
+  // Navigation History Management
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state) {
+        const { activeTab: stateTab, viewMode: stateMode, showAddItemModal: stateModal, isSidebarOpen: stateSidebar } = event.state;
+        if (stateTab) setActiveTab(stateTab);
+        if (stateMode) setViewMode(stateMode);
+        if (stateModal !== undefined) setShowAddItemModal(stateModal);
+        if (stateSidebar !== undefined) setIsSidebarOpen(stateSidebar);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    
+    // Initial state
+    window.history.replaceState({ activeTab, viewMode, showAddItemModal, isSidebarOpen }, '');
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Sync state to history
+  useEffect(() => {
+    if (activeTab === 'auth') return;
+    
+    const currentState = window.history.state;
+    if (!currentState || 
+        currentState.activeTab !== activeTab || 
+        currentState.viewMode !== viewMode || 
+        currentState.showAddItemModal !== showAddItemModal ||
+        currentState.isSidebarOpen !== isSidebarOpen) {
+      window.history.pushState({ activeTab, viewMode, showAddItemModal, isSidebarOpen }, '');
+    }
+  }, [activeTab, viewMode, showAddItemModal, isSidebarOpen]);
+
   // Customer states
   const [cart, setCart] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
