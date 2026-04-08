@@ -17,6 +17,8 @@ interface CustomerViewProps {
   payments: any[];
   cart: any[];
   setCart: (cart: any[]) => void;
+  editingOrder: any | null;
+  setEditingOrder: (order: any | null) => void;
   selectedCategory: string;
   setSelectedCategory: (category: string) => void;
   onPlaceOrder: (orderData: any) => Promise<boolean>;
@@ -30,6 +32,7 @@ interface CustomerViewProps {
 
 export function CustomerView({ 
   activeTab, menuItems, orders, reservations, tables, payments, cart, setCart, 
+  editingOrder, setEditingOrder,
   selectedCategory, setSelectedCategory, onPlaceOrder,
   token, user, onUpdate, setActiveTab, loading, addNotification
 }: CustomerViewProps) {
@@ -89,6 +92,11 @@ export function CustomerView({
 
   const addToCart = (item: any) => {
     if (!Array.isArray(cart)) return;
+    // If we were editing an order, clear it when adding new items from menu
+    if (editingOrder) {
+      setEditingOrder(null);
+      setCart([]);
+    }
     const existing = cart.find((c: any) => c && c._id === item._id);
     if (existing) {
       if (existing.quantity >= item.stockQuantity) {
@@ -140,6 +148,17 @@ export function CustomerView({
     } catch (err) {
       console.error('Clear order history error:', err);
     }
+  };
+
+  const handleEditOrder = (order: any) => {
+    const cartItems = order.items.map((item: any) => ({
+      ...item.menuItem,
+      quantity: item.quantity,
+      price: item.price
+    }));
+    setCart(cartItems);
+    setEditingOrder(order);
+    setShowCartModal(true);
   };
 
   const renderContent = () => {
@@ -277,13 +296,22 @@ export function CustomerView({
                         {order.status}
                       </div>
                       {order.status !== 'Paid' && order.status !== 'Cancelled' && (
-                        <button 
-                          onClick={() => setSelectedOrderForPayment(order)}
-                          className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-900/10"
-                        >
-                          <Wallet size={14} />
-                          Pay Now
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => handleEditOrder(order)}
+                            className="flex items-center gap-2 bg-amber-50 text-amber-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all"
+                          >
+                            <Plus size={14} />
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => setSelectedOrderForPayment(order)}
+                            className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-900/10"
+                          >
+                            <Wallet size={14} />
+                            Pay Now
+                          </button>
+                        </div>
                       )}
                       {order.status === 'Paid' && (
                         <button 
@@ -535,9 +563,10 @@ export function CustomerView({
       {/* Fullscreen Cart Modal */}
       <CartModal 
         isOpen={showCartModal}
-        onClose={() => setShowCartModal(false)}
+        onClose={() => { setShowCartModal(false); setEditingOrder(null); }}
         cart={cart}
         setCart={setCart}
+        editingOrder={editingOrder}
         reservations={reservations}
         orders={orders}
         tables={tables}

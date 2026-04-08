@@ -14,13 +14,26 @@ interface CartModalProps {
   user: any | null;
   onBookTable: () => void;
   loading: boolean;
+  editingOrder?: any | null;
   addNotification: (message: string, type: 'info' | 'success' | 'warning') => void;
 }
 
-export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reservations, orders, tables, user, onBookTable, loading, addNotification }: CartModalProps) {
+export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reservations, orders, tables, user, onBookTable, loading, editingOrder, addNotification }: CartModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [orderType, setOrderType] = useState<'Dine-In' | 'Takeaway' | 'Online'>('Dine-In');
   const [tableNumber, setTableNumber] = useState('');
+
+  useEffect(() => {
+    if (editingOrder) {
+      setOrderType(editingOrder.orderType || 'Dine-In');
+      setTableNumber(editingOrder.tableNumber?.toString() || '');
+      setStep(1);
+    } else {
+      setOrderType('Dine-In');
+      setTableNumber('');
+      setStep(1);
+    }
+  }, [editingOrder, isOpen]);
 
   const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
@@ -61,6 +74,9 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
   };
 
   const getTableStatus = (num: number) => {
+    const table = tables.find(t => t.number === num);
+    if (table && table.status && table.status !== 'Available') return table.status;
+
     if (!orders || !Array.isArray(orders)) return 'Available';
 
     const activeOrder = orders.find(o => 
@@ -344,7 +360,7 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
                 ) : (
                   <button 
                     onClick={handlePlaceOrder}
-                    disabled={loading || !tableNumber}
+                    disabled={loading || (orderType === 'Dine-In' && !tableNumber)}
                     className="w-full bg-stone-900 hover:bg-black text-white font-black py-4 sm:py-5 rounded-2xl sm:rounded-[2rem] transition-all flex items-center justify-center gap-3 shadow-2xl shadow-stone-900/20 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 text-[10px] sm:text-sm uppercase tracking-widest"
                   >
                     {loading ? (
@@ -352,7 +368,7 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
                     ) : (
                       <Send size={18} strokeWidth={2.5} />
                     )}
-                    {loading ? 'Processing...' : `Confirm Table ${tableNumber} & Order`}
+                    {loading ? 'Processing...' : (editingOrder ? `Update Order ${editingOrder.orderType === 'Dine-In' ? `(Table ${tableNumber})` : ''}` : `Confirm Table ${tableNumber} & Order`)}
                   </button>
                 )}
                 

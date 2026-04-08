@@ -89,16 +89,38 @@ export function ReservationManagement({ reservations, orders, tables, token, onU
     }
   };
 
-  const getTableStatus = (num: number) => {
+  const updateTableStatus = async (id: string, status: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/tables/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        onUpdate();
+      }
+    } catch (err) {
+      console.error('Update table status error:', err);
+    }
+  };
+
+  const getTableStatus = (table: any) => {
+    // Manual status override if set
+    if (table.status && table.status !== 'Available') return table.status;
+
+    const num = table.number;
     const hasActiveOrder = orders.some(o => 
-      o.tableNumber === num && 
+      o && o.tableNumber === num && 
       ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
     );
     if (hasActiveOrder) return 'Occupied';
 
     const now = new Date();
     const hasReservation = reservations.some(r => {
-      if (r.tableNumber !== num || r.status === 'Cancelled' || r.status === 'Completed') return false;
+      if (!r || r.tableNumber !== num || r.status === 'Cancelled' || r.status === 'Completed') return false;
       const resTime = new Date(r.reservationTime);
       const diffMs = Math.abs(now.getTime() - resTime.getTime());
       const diffHours = diffMs / (1000 * 60 * 60);
@@ -168,28 +190,39 @@ export function ReservationManagement({ reservations, orders, tables, token, onU
         <div className="p-8 bg-stone-50/30">
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
             {tables.map((table) => {
-              const status = getTableStatus(table.number);
+              const status = getTableStatus(table);
               return (
                 <div key={table._id} className={`group relative bg-white border rounded-2xl p-5 flex flex-col items-center gap-1 shadow-sm hover:shadow-md transition-all ${
                   status === 'Occupied' ? 'border-amber-200 bg-amber-50/10' : 
                   status === 'Reserved' ? 'border-blue-200 bg-blue-50/10' : 
+                  status === 'Cleaning' ? 'border-purple-200 bg-purple-50/10' :
                   'border-stone-100'
                 }`}>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 transition-colors ${
                     status === 'Occupied' ? 'bg-amber-100 text-amber-600' : 
                     status === 'Reserved' ? 'bg-blue-100 text-blue-600' : 
+                    status === 'Cleaning' ? 'bg-purple-100 text-purple-600' :
                     'bg-stone-50 text-stone-800'
                   }`}>
                     <span className="text-lg font-black">{table.number}</span>
                   </div>
                   <span className="text-[9px] font-black text-stone-400 uppercase tracking-widest">{table.capacity} Seats</span>
-                  <span className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md mt-1 ${
-                    status === 'Occupied' ? 'bg-amber-100 text-amber-700' : 
-                    status === 'Reserved' ? 'bg-blue-100 text-blue-700' : 
-                    'bg-emerald-100 text-emerald-700'
-                  }`}>
-                    {status}
-                  </span>
+                  
+                  <select 
+                    value={status}
+                    onChange={(e) => updateTableStatus(table._id, e.target.value)}
+                    className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md mt-1 border-none focus:ring-0 cursor-pointer ${
+                      status === 'Occupied' ? 'bg-amber-100 text-amber-700' : 
+                      status === 'Reserved' ? 'bg-blue-100 text-blue-700' : 
+                      status === 'Cleaning' ? 'bg-purple-100 text-purple-700' :
+                      'bg-emerald-100 text-emerald-700'
+                    }`}
+                  >
+                    <option value="Available">Available</option>
+                    <option value="Occupied">Occupied</option>
+                    <option value="Reserved">Reserved</option>
+                    <option value="Cleaning">Cleaning</option>
+                  </select>
                   
                   <button 
                     onClick={() => deleteTable(table._id)}

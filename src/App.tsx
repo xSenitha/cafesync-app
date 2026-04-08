@@ -105,6 +105,7 @@ export default function App() {
 
   // Customer states
   const [cart, setCart] = useState<any[]>([]);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   // Form states
@@ -352,8 +353,11 @@ export default function App() {
   const handlePlaceOrder = async (orderData: any) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/orders`, {
-        method: 'POST',
+      const url = editingOrder ? `${API_BASE_URL}/api/orders/${editingOrder._id}` : `${API_BASE_URL}/api/orders`;
+      const method = editingOrder ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -371,17 +375,18 @@ export default function App() {
       });
       if (res.ok) {
         setCart([]);
-        addNotification('Order placed successfully!', 'success');
+        setEditingOrder(null);
+        addNotification(editingOrder ? 'Order updated successfully!' : 'Order placed successfully!', 'success');
         setActiveTab('orders');
         // fetchData will be triggered by activeTab change effect
         return true;
       } else {
         const data = await res.json();
-        addNotification(data.message || 'Failed to place order', 'warning');
+        addNotification(data.message || 'Failed to save order', 'warning');
         return false;
       }
     } catch (err) {
-      addNotification('Connection error while placing order', 'warning');
+      addNotification('Connection error while saving order', 'warning');
       return false;
     } finally {
       setLoading(false);
@@ -436,6 +441,7 @@ export default function App() {
                   tables={tables}
                   payments={payments}
                   cart={cart} setCart={setCart} 
+                  editingOrder={editingOrder} setEditingOrder={setEditingOrder}
                   selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory}
                   onPlaceOrder={handlePlaceOrder}
                   token={token}
