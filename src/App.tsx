@@ -307,8 +307,11 @@ export default function App() {
       if (res.ok && data.token) {
         setToken(data.token);
         setUser(data.user);
-        setViewMode(data.user.role === 'customer' ? 'customer' : 'admin');
+        const initialMode = data.user.role === 'customer' ? 'customer' : 'admin';
+        setViewMode(initialMode);
         setActiveTab('dashboard');
+        // Replace the 'auth' state in history with the logged in state
+        window.history.replaceState({ activeTab: 'dashboard', viewMode: initialMode, showAddItemModal: false, isSidebarOpen: false }, '');
       } else {
         setError(data.message || 'Login failed');
       }

@@ -235,7 +235,7 @@ export function CustomerView({
               )}
             </div>
             <div className="grid grid-cols-1 gap-4">
-              {orders.length === 0 ? (
+              {!Array.isArray(orders) || orders.length === 0 ? (
                 <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
                   <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
                     <Clock size={40} />
@@ -251,15 +251,17 @@ export function CustomerView({
                         <ShoppingCart size={24} />
                       </div>
                       <div>
-                        <p className="text-sm font-black text-stone-800">Order #{order._id.slice(-6).toUpperCase()}</p>
+                        <p className="text-sm font-black text-stone-800">Order #{order?._id ? order._id.slice(-6).toUpperCase() : 'N/A'}</p>
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {order.items.map((item: any, idx: number) => (
+                          {order?.items && Array.isArray(order.items) && order.items.map((item: any, idx: number) => (
                             <span key={idx} className="text-[9px] font-bold bg-stone-50 text-stone-500 px-1.5 py-0.5 rounded">
-                              {item.menuItem?.name} x{item.quantity}
+                              {item.menuItem?.name || 'Item'} x{item.quantity}
                             </span>
                           ))}
                         </div>
-                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mt-1">{new Date(order.createdAt).toLocaleString()}</p>
+                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mt-1">
+                          {order?.createdAt ? new Date(order.createdAt).toLocaleString() : 'Date N/A'}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-8">
@@ -301,7 +303,7 @@ export function CustomerView({
         );
 
       case 'reservations':
-        const myReservations = reservations.filter((res: any) => res.user === user?._id);
+        const myReservations = Array.isArray(reservations) ? reservations.filter((res: any) => res && res.user === user?._id) : [];
         return (
           <div className="space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -318,7 +320,7 @@ export function CustomerView({
               </button>
             </div>
             <div className="grid grid-cols-1 gap-4">
-              {myReservations.length === 0 ? (
+              {!Array.isArray(myReservations) || myReservations.length === 0 ? (
                 <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
                   <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
                     <Calendar size={40} />
@@ -382,7 +384,7 @@ export function CustomerView({
         );
 
       case 'payments':
-        const pendingOrders = orders.filter((o: any) => o.status !== 'Paid' && o.status !== 'Cancelled');
+        const pendingOrders = Array.isArray(orders) ? orders.filter((o: any) => o && o.status !== 'Paid' && o.status !== 'Cancelled') : [];
         return (
           <div className="space-y-12">
             {/* Pending Payments */}
@@ -400,8 +402,8 @@ export function CustomerView({
                           <Clock size={24} />
                         </div>
                         <div>
-                          <p className="text-sm font-black text-stone-800">Order #{order._id.slice(-6).toUpperCase()}</p>
-                          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Total: Rs. {order.totalAmount}</p>
+                          <p className="text-sm font-black text-stone-800">Order #{order?._id ? order._id.slice(-6).toUpperCase() : 'N/A'}</p>
+                          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Total: Rs. {order?.totalAmount || 0}</p>
                         </div>
                       </div>
                       <button 
@@ -424,7 +426,7 @@ export function CustomerView({
                 <p className="text-stone-400 text-xs font-medium mt-1">Review your past transactions.</p>
               </div>
               <div className="grid grid-cols-1 gap-4">
-                {payments.length === 0 ? (
+                {!Array.isArray(payments) || payments.length === 0 ? (
                   <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
                     <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
                       <CreditCard size={40} />
