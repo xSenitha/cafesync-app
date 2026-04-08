@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Plus, Calendar, CreditCard, Users, MessageSquare } from 'lucide-react';
 import { API_BASE_URL } from './config';
+import { App as CapApp } from '@capacitor/app';
 
 // Components
 import { Header } from './components/layout/Header';
@@ -41,37 +42,63 @@ export default function App() {
   const [feedback, setFeedback] = useState<any[]>([]);
   const [tables, setTables] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const isPopping = useRef(false);
+  const lastExitPress = useRef(0);
 
   // Navigation History Management
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (event.state) {
+        isPopping.current = true;
         const { activeTab: stateTab, viewMode: stateMode, showAddItemModal: stateModal, isSidebarOpen: stateSidebar } = event.state;
         if (stateTab) setActiveTab(stateTab);
         if (stateMode) setViewMode(stateMode);
         if (stateModal !== undefined) setShowAddItemModal(stateModal);
         if (stateSidebar !== undefined) setIsSidebarOpen(stateSidebar);
+        
+        // Brief timeout to let states update before allowing new pushes
+        setTimeout(() => { isPopping.current = false; }, 50);
       }
     };
 
     window.addEventListener('popstate', handlePopState);
     
+    // Capacitor Hardware Back Button
+    const backListener = CapApp.addListener('backButton', ({ canGoBack }) => {
+      if (!canGoBack || window.history.length <= 1) {
+        const now = Date.now();
+        if (now - lastExitPress.current < 2000) {
+          CapApp.exitApp();
+        } else {
+          lastExitPress.current = now;
+          addNotification('Press back again to exit', 'info');
+        }
+      } else {
+        window.history.back();
+      }
+    });
+    
     // Initial state
     window.history.replaceState({ activeTab, viewMode, showAddItemModal, isSidebarOpen }, '');
 
-    return () => window.removeEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      backListener.then(l => l.remove());
+    };
   }, []);
 
   // Sync state to history
   useEffect(() => {
-    if (activeTab === 'auth') return;
+    if (activeTab === 'auth' || isPopping.current) return;
     
     const currentState = window.history.state;
-    if (!currentState || 
+    const hasChanged = !currentState || 
         currentState.activeTab !== activeTab || 
         currentState.viewMode !== viewMode || 
         currentState.showAddItemModal !== showAddItemModal ||
-        currentState.isSidebarOpen !== isSidebarOpen) {
+        currentState.isSidebarOpen !== isSidebarOpen;
+
+    if (hasChanged) {
       window.history.pushState({ activeTab, viewMode, showAddItemModal, isSidebarOpen }, '');
     }
   }, [activeTab, viewMode, showAddItemModal, isSidebarOpen]);

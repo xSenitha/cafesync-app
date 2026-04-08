@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { Coffee, ShoppingCart, Plus, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle, Wallet, ShoppingBag, XCircle, Trash2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FeedbackForm } from './FeedbackForm';
 import { ReservationForm } from './ReservationForm';
 import { PaymentModal } from './PaymentModal';
@@ -37,15 +37,19 @@ export function CustomerView({
   const [showReservationForm, setShowReservationForm] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<any | null>(null);
+  const isPopping = useRef(false);
 
   // Handle Browser Back Button for Customer Modals
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (event.state) {
+        isPopping.current = true;
         if (event.state.showCartModal !== undefined) setShowCartModal(event.state.showCartModal);
         if (event.state.showReservationForm !== undefined) setShowReservationForm(event.state.showReservationForm);
         if (event.state.showFeedbackForm !== undefined) setShowFeedbackForm(event.state.showFeedbackForm);
         if (event.state.isPaymentModalOpen === false) setSelectedOrderForPayment(null);
+        
+        setTimeout(() => { isPopping.current = false; }, 50);
       }
     };
 
@@ -55,6 +59,8 @@ export function CustomerView({
 
   // Sync modal states to history
   useEffect(() => {
+    if (isPopping.current) return;
+    
     const currentState = window.history.state;
     if (!currentState) return;
 
