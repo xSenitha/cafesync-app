@@ -49,6 +49,15 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/tables', tableRoutes);
 
+// Fallback for missing API routes - must be BEFORE Vite
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ 
+    error: 'API Endpoint not found',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
+
 async function startServer() {
   console.log('🚀 Initializing CafeSync Management Suite...');
 

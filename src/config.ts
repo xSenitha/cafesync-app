@@ -13,16 +13,18 @@ const getBaseUrl = () => {
       return ''; 
     }
     
-    // 3. Custom Railway/Production URL for Web
-    if (hostname.includes('up.railway.app')) {
+    // 3. Custom Production URL (Change this to your actual backend URL)
+    const PRODUCTION_API_URL = 'https://cafesync-app-production.up.railway.app'; // <--- ඔබේ Backend URL එක මෙතනට දාන්න
+    
+    if (hostname.includes('up.railway.app') || hostname === 'your-hosted-domain.com') {
       return origin;
     }
     
     return origin;
   }
   
-  // For Mobile (Capacitor) or SSR - always use the fixed hosted URL
-  return 'https://cafesync-app-production.up.railway.app';
+  // For Mobile (Capacitor) or SSR
+  return 'https://cafesync-app-production.up.railway.app'; // <--- ඔබේ Backend URL එක මෙතනට දාන්න
 };
 
 export const API_BASE_URL = getBaseUrl();
