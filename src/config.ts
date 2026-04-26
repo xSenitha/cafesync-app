@@ -1,30 +1,22 @@
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
-    const origin = window.location.origin;
     const hostname = window.location.hostname;
     
-    // 1. AI Studio Preview Environment
-    if (hostname.includes('asia-southeast1.run.app')) {
-      return ''; // Use relative path for same-origin
-    }
-    
-    // 2. Local Development (localhost)
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || origin.includes('localhost:3000')) {
+    // Use relative paths if we are on a known web-hosted platform (Railway, AI Studio, or Dev localhost)
+    if (
+      hostname.endsWith('.railway.app') || 
+      hostname.endsWith('.run.app') || 
+      hostname === 'localhost' || 
+      hostname === '127.0.0.1'
+    ) {
       return ''; 
     }
     
-    // 3. Custom Production URL (Change this to your actual backend URL)
-    const PRODUCTION_API_URL = 'https://cafesync-app-production.up.railway.app'; // <--- ඔබේ Backend URL එක මෙතනට දාන්න
-    
-    if (hostname.includes('up.railway.app') || hostname === 'your-hosted-domain.com') {
-      return origin;
-    }
-    
-    return origin;
+    return window.location.origin;
   }
   
-  // For Mobile (Capacitor) or SSR
-  return 'https://cafesync-app-production.up.railway.app'; // <--- ඔබේ Backend URL එක මෙතනට දාන්න
+  // For Mobile (Capacitor) or SSR - fallback but usually relative paths don't work there
+  return 'https://cafesync-app-production.up.railway.app';
 };
 
 export const API_BASE_URL = getBaseUrl();

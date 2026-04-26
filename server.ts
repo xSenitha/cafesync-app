@@ -19,7 +19,7 @@ import feedbackRoutes from './server/routes/feedback.ts';
 import tableRoutes from './server/routes/table.ts';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // 1. Basic Middleware
 app.use(cors());
@@ -28,7 +28,9 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // 2. Logger Middleware for debugging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} [${req.method}] ${req.url}`);
+  if (!req.url.includes('static') && !req.url.includes('assets')) {
+    console.log(`${new Date().toISOString()} [${req.method}] ${req.url}`);
+  }
   next();
 });
 

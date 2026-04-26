@@ -42,9 +42,9 @@ router.post('/register', async (req: any, res: any) => {
 // @route   POST /api/auth/login
 // @desc    Login user
 router.post('/login', async (req: any, res: any) => {
+  const { email, password } = req.body;
+  console.log(`🔑 [API] Login attempt: ${email}`);
   try {
-    const { email, password } = req.body;
-
     const user: any = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
