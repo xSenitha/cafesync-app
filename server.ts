@@ -26,17 +26,13 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// 2. Start listener immediately
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 CafeSync Server listening at http://0.0.0.0:${PORT}`);
-  
-  // 3. Initialize background services
-  startServer().catch(err => {
-    console.error('💥 Critical Startup Error:', err);
-  });
+// 2. Logger Middleware for debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} [${req.method}] ${req.url}`);
+  next();
 });
 
-// Health check
+// 3. API Routes (Registered BEFORE Vite/catch-all)
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
@@ -45,7 +41,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Mount API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
@@ -75,7 +70,15 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
-      app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
+      // Standard SPA catch-all for production
+      app.get('*', (req, res) => {
+        // Only serve index.html if it's not an API route (though API routes should have matched above)
+        if (!req.url.startsWith('/api')) {
+          res.sendFile(path.join(distPath, 'index.html'));
+        } else {
+          res.status(404).json({ error: 'API route not found' });
+        }
+      });
     }
   }
 
@@ -91,4 +94,13 @@ async function startServer() {
   mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ Connected to MongoDB Atlas'))
     .catch(err => console.error('❌ MongoDB Connection failed:', err.message));
+
+  // 7. Start listener
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 CafeSync Server live at http://localhost:${PORT}`);
+  });
 }
+
+startServer().catch(err => {
+  console.error('💥 Critical Startup Error:', err);
+});
