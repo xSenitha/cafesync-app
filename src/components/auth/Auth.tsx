@@ -1,5 +1,6 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { Coffee, LogIn, AlertCircle, CheckCircle } from 'lucide-react-native';
+import { Coffee, LogIn, AlertCircle, CheckCircle, ActivityIndicator as StatusIndicator } from 'lucide-react-native';
+import { API_BASE_URL } from '../../config';
 
 interface AuthProps {
   name: string;
@@ -13,21 +14,31 @@ interface AuthProps {
   success: string | null;
   handleLogin: () => void;
   handleRegister: () => void;
+  health?: any;
 }
 
 export function Auth({ 
   name, setName, email, setEmail, password, setPassword, 
-  loading, error, success, handleLogin, handleRegister 
+  loading, error, success, handleLogin, handleRegister,
+  health
 }: AuthProps) {
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-4 py-12">
       <View className="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-stone-100">
-        <View className="items-center mb-10">
+        <View className="items-center mb-8">
           <View className="bg-amber-50 p-4 rounded-3xl mb-4">
             <Coffee size={32} color="#b45309" />
           </View>
-          <Text className="text-3xl font-black text-stone-800 text-center">Welcome Back</Text>
-          <Text className="text-stone-400 text-sm mt-2 text-center">Manage your cafe with precision and ease.</Text>
+          <Text className="text-3xl font-black text-stone-800 text-center">CafeSync</Text>
+          <Text className="text-stone-400 text-sm mt-2 text-center mb-4">Manage your cafe with precision and ease.</Text>
+          
+          {/* Health Indicator */}
+          <View className={`flex-row items-center gap-2 px-4 py-1.5 rounded-full border ${health ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'}`}>
+            <View className={`w-2 h-2 rounded-full ${health ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            <Text className={`text-[10px] font-bold ${health ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {health ? 'BACKEND CONNECTED' : `CONNECTING... ${API_BASE_URL || '(relative)'}`}
+            </Text>
+          </View>
         </View>
         
         {error && (

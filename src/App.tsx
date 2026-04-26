@@ -179,6 +179,9 @@ export default function App() {
     setError(null);
     setSuccess(null);
     const url = `${API_BASE_URL}/api/auth/login`;
+    const fullUrl = url.startsWith('http') ? url : window.location.origin + url;
+    console.log(`🌐 Fetching: ${fullUrl}`);
+    
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -191,8 +194,8 @@ export default function App() {
       try {
         data = JSON.parse(text);
       } catch (e) {
-        console.error('Failed to parse response as JSON:', text.substring(0, 500));
-        throw new Error(`Invalid server response. Expected JSON but received: ${text.substring(0, 50).replace(/</g, '&lt;')}...`);
+        console.error(`Failed to parse response from ${fullUrl}:`, text.substring(0, 500));
+        throw new Error(`Server returned HTML instead of JSON. (URL: ${fullUrl})`);
       }
 
       if (res.ok && data.token) {
@@ -304,6 +307,7 @@ export default function App() {
               password={password} setPassword={setPassword}
               loading={loading} error={error} success={success}
               handleLogin={handleLogin} handleRegister={handleRegister}
+              health={health}
             />
           )}
 

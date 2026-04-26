@@ -2,12 +2,15 @@ const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // Use relative paths if we are on a known web-hosted platform (Railway, AI Studio, or Dev localhost)
+    // In browser, relative path is safest for same-origin backend
+    // Only use full URL if we are running in a disconnected environment (like Capacitor)
+    // or if the user is explicitly developing on a different port than the backend
     if (
-      hostname.endsWith('.railway.app') || 
-      hostname.endsWith('.run.app') || 
       hostname === 'localhost' || 
-      hostname === '127.0.0.1'
+      hostname === '127.0.0.1' ||
+      hostname.includes('.run.app') ||
+      hostname.includes('.railway.app') ||
+      hostname.includes('.up.railway.app')
     ) {
       return ''; 
     }
@@ -15,7 +18,7 @@ const getBaseUrl = () => {
     return window.location.origin;
   }
   
-  // For Mobile (Capacitor) or SSR - fallback but usually relative paths don't work there
+  // Fallback for SSR
   return 'https://cafesync-app-production.up.railway.app';
 };
 

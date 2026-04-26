@@ -27,15 +27,17 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // 2. Logger Middleware for debugging
-app.use((req, res, next) => {
-  if (!req.url.includes('static') && !req.url.includes('assets')) {
-    console.log(`${new Date().toISOString()} [${req.method}] ${req.url}`);
+app.use((req: any, res: any, next: any) => {
+  const isApi = req.url.startsWith('/api');
+  if (isApi || (!req.url.includes('static') && !req.url.includes('assets'))) {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} (IsAPI: ${isApi})`);
   }
   next();
 });
 
-// 3. API Routes (Registered BEFORE Vite/catch-all)
+// 3. API Routes (Registered BEFORE catch-all)
 app.get('/api/health', (req, res) => {
+  console.log('✅ Health check hit');
   res.json({ 
     status: 'ok', 
     message: 'CafeSync API is running',
@@ -43,6 +45,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Explicit API Mounts
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
@@ -51,44 +54,38 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/tables', tableRoutes);
 
-// Fallback for missing API routes - must be BEFORE Vite
-app.use('/api/*', (req, res) => {
+// JSON Fallback for ALL missing /api/* routes
+app.all('/api/*', (req, res) => {
+  console.log(`❌ [API 404] ${req.method} ${req.url}`);
   res.status(404).json({ 
     error: 'API Endpoint not found',
     path: req.originalUrl,
-    method: req.method
+    method: req.method,
+    hint: 'Check if the backend route is defined correctly'
   });
 });
 
 async function startServer() {
   console.log('🚀 Initializing CafeSync Management Suite...');
 
-  // 4. Vite Integration for Front-end (Development)
+  // 4. Vite / Static Files (Registered AFTER API)
   if (process.env.NODE_ENV !== 'production') {
-    console.log('📦 Integrating Vite for development...');
     try {
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa',
       });
       app.use(vite.middlewares);
-      console.log('✅ Vite middleware integrated');
     } catch (vErr) {
       console.error('❌ Vite integration failed:', vErr);
     }
   } else {
-    console.log('🚀 Serving production build assets...');
     const distPath = path.join(process.cwd(), 'dist');
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
-      // Standard SPA catch-all for production
+      // Catch-all ONLY for GET requests (SPA client-side routing)
       app.get('*', (req, res) => {
-        // Only serve index.html if it's not an API route (though API routes should have matched above)
-        if (!req.url.startsWith('/api')) {
-          res.sendFile(path.join(distPath, 'index.html'));
-        } else {
-          res.status(404).json({ error: 'API route not found' });
-        }
+        res.sendFile(path.join(distPath, 'index.html'));
       });
     }
   }
@@ -106,7 +103,16 @@ async function startServer() {
     .then(() => console.log('✅ Connected to MongoDB Atlas'))
     .catch(err => console.error('❌ MongoDB Connection failed:', err.message));
 
-  // 7. Start listener
+  // 7. Final Global Fallback (Last Resort)
+  app.use((req: any, res: any) => {
+    if (req.url.startsWith('/api')) {
+      res.status(404).json({ error: 'API route not found (Global Fallback)' });
+    } else {
+      res.status(404).send('Page not found');
+    }
+  });
+
+  // 8. Start listener
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 CafeSync Server live at http://localhost:${PORT}`);
   });
