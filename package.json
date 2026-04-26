@@ -37,7 +37,6 @@
     "react-dom": "18.3.1",
     "react-native": "^0.74.7",
     "react-native-css-interop": "^0.2.3",
-    "react-native-reanimated": "^3.10.1",
     "react-native-svg": "^15.15.4",
     "react-native-web": "^0.19.13",
     "recharts": "^2.15.1",

@@ -53,12 +53,18 @@ export default function App() {
 
   useEffect(() => {
     const checkHealth = async () => {
+      const url = `${API_BASE_URL}/api/health`;
       try {
-        const res = await fetch(`${API_BASE_URL}/api/health`);
+        const res = await fetch(url);
+        if (!res.ok) {
+          const text = await res.text();
+          console.error(`Health check failed: ${res.status} ${res.statusText}`, text.substring(0, 100));
+          return;
+        }
         const data = await res.json();
         setHealth(data);
       } catch (err: any) {
-        setError(`Cannot connect to Backend at ${API_BASE_URL}. Error: ${err.message}`);
+        console.error(`Health check error at ${url}:`, err.message);
       }
     };
     checkHealth();
@@ -172,13 +178,23 @@ export default function App() {
     setLoading(true);
     setError(null);
     setSuccess(null);
+    const url = `${API_BASE_URL}/api/auth/login`;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
+      
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', text.substring(0, 500));
+        throw new Error(`Invalid server response. Expected JSON but received: ${text.substring(0, 50).replace(/</g, '&lt;')}...`);
+      }
+
       if (res.ok && data.token) {
         setToken(data.token);
         setUser(data.user);
@@ -189,6 +205,7 @@ export default function App() {
         setError(data.message || 'Login failed');
       }
     } catch (err: any) {
+      console.error(`Login error at ${url}:`, err);
       setError(`Connection Error: ${err.message}`);
     } finally {
       setLoading(false);
