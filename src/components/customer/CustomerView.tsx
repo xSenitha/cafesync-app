@@ -1,11 +1,10 @@
-import { motion, AnimatePresence } from 'motion/react';
-import { Coffee, ShoppingCart, Plus, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle, Wallet, ShoppingBag, XCircle, Trash2 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
+import { Coffee, ShoppingCart, Plus, Clock, Calendar, CreditCard, CheckCircle, AlertCircle, Star, MessageSquare, PlusCircle, Wallet, ShoppingBag, XCircle, Trash2 } from 'lucide-react-native';
 import { FeedbackForm } from './FeedbackForm';
 import { ReservationForm } from './ReservationForm';
 import { PaymentModal } from './PaymentModal';
 import { CartModal } from './CartModal';
-
 import { API_BASE_URL } from '../../config';
 
 interface CustomerViewProps {
@@ -40,50 +39,6 @@ export function CustomerView({
   const [showReservationForm, setShowReservationForm] = useState(false);
   const [showCartModal, setShowCartModal] = useState(false);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<any | null>(null);
-  const isPopping = useRef(false);
-
-  // Handle Browser Back Button for Customer Modals
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      if (event.state) {
-        isPopping.current = true;
-        if (event.state.showCartModal !== undefined) setShowCartModal(event.state.showCartModal);
-        if (event.state.showReservationForm !== undefined) setShowReservationForm(event.state.showReservationForm);
-        if (event.state.showFeedbackForm !== undefined) setShowFeedbackForm(event.state.showFeedbackForm);
-        if (event.state.isPaymentModalOpen === false) setSelectedOrderForPayment(null);
-        
-        setTimeout(() => { isPopping.current = false; }, 50);
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  // Sync modal states to history
-  useEffect(() => {
-    if (isPopping.current) return;
-    
-    const currentState = window.history.state;
-    if (!currentState) return;
-
-    const isPaymentModalOpen = !!selectedOrderForPayment;
-    const hasChanged = 
-      currentState.showCartModal !== showCartModal ||
-      currentState.showReservationForm !== showReservationForm ||
-      currentState.showFeedbackForm !== showFeedbackForm ||
-      currentState.isPaymentModalOpen !== isPaymentModalOpen;
-
-    if (hasChanged) {
-      window.history.pushState({ 
-        ...currentState, 
-        showCartModal, 
-        showReservationForm, 
-        showFeedbackForm,
-        isPaymentModalOpen
-      }, '');
-    }
-  }, [showCartModal, showReservationForm, showFeedbackForm, selectedOrderForPayment]);
 
   const categories = ['All', ...(Array.isArray(menuItems) ? [...new Set(menuItems.map((item: any) => item.category))] : [])];
   const filteredItems = Array.isArray(menuItems) 
@@ -92,7 +47,6 @@ export function CustomerView({
 
   const addToCart = (item: any) => {
     if (!Array.isArray(cart)) return;
-    // If we were editing an order, clear it when adding new items from menu
     if (editingOrder) {
       setEditingOrder(null);
       setCart([]);
@@ -100,13 +54,13 @@ export function CustomerView({
     const existing = cart.find((c: any) => c && c._id === item._id);
     if (existing) {
       if (existing.quantity >= item.stockQuantity) {
-        addNotification(`Only ${item.stockQuantity} items available in stock`, 'warning');
+        Alert.alert('Low Stock', `Only ${item.stockQuantity} items available in stock`);
         return;
       }
       setCart(cart.map((c: any) => c._id === item._id ? { ...c, quantity: c.quantity + 1 } : c));
     } else {
       if (item.stockQuantity <= 0) {
-        addNotification(`Item out of stock`, 'warning');
+        Alert.alert('Out of Stock', `Item out of stock`);
         return;
       }
       setCart([...cart, { ...item, quantity: 1 }]);
@@ -115,39 +69,61 @@ export function CustomerView({
   };
 
   const onCancelReservation = async (id: string) => {
-    if (!window.confirm('Are you sure you want to cancel this reservation?')) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/reservations/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    Alert.alert(
+      'Cancel Reservation',
+      'Are you sure you want to cancel this reservation?',
+      [
+        { text: 'No', style: 'cancel' },
+        { 
+          text: 'Yes', 
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/api/reservations/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              if (res.ok) {
+                onUpdate();
+                addNotification('Reservation cancelled successfully', 'success');
+              }
+            } catch (err) {
+              console.error('Cancel reservation error:', err);
+            }
+          }
         }
-      });
-      if (res.ok) {
-        onUpdate();
-        addNotification('Reservation cancelled successfully', 'success');
-      }
-    } catch (err) {
-      console.error('Cancel reservation error:', err);
-    }
+      ]
+    );
   };
 
   const onClearOrderHistory = async () => {
-    if (!window.confirm('Are you sure you want to clear your order history? (Only Paid and Cancelled orders will be removed)')) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/orders/clear`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    Alert.alert(
+      'Clear History',
+      'Are you sure you want to clear your order history? (Only Paid and Cancelled orders will be removed)',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Clear', 
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/api/orders/clear`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              if (res.ok) {
+                onUpdate();
+                addNotification('Order history cleared', 'success');
+              }
+            } catch (err) {
+              console.error('Clear order history error:', err);
+            }
+          }
         }
-      });
-      if (res.ok) {
-        onUpdate();
-        addNotification('Order history cleared', 'success');
-      }
-    } catch (err) {
-      console.error('Clear order history error:', err);
-    }
+      ]
+    );
   };
 
   const handleEditOrder = (order: any) => {
@@ -166,357 +142,321 @@ export function CustomerView({
       case 'menu':
       case 'dashboard':
         return (
-          <div className="flex flex-col gap-6 sm:gap-8">
-            <div className="flex-1 space-y-6 sm:space-y-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-black text-stone-800">Fresh Menu</h2>
-                  <p className="text-stone-400 text-xs sm:text-sm font-medium mt-1">Select your favorite items and place an order.</p>
-                </div>
-              </div>
+          <View className="space-y-6">
+            <View className="px-1">
+              <Text className="text-2xl font-black text-stone-800">Fresh Menu</Text>
+              <Text className="text-stone-400 text-xs font-medium mt-1">Select your favorite items.</Text>
+            </View>
 
-              {/* Categories */}
-              <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
-                {categories.map(cat => (
-                  <button
-                    key={cat as string}
-                    onClick={() => setSelectedCategory(cat as string)}
-                    className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                      selectedCategory === cat 
-                        ? 'bg-stone-900 text-white shadow-xl shadow-stone-900/10' 
-                        : 'bg-white text-stone-400 hover:bg-stone-50 border border-stone-100'
-                    }`}
-                  >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+              {categories.map(cat => (
+                <TouchableOpacity
+                  key={cat as string}
+                  onPress={() => setSelectedCategory(cat as string)}
+                  className={`px-6 py-3 rounded-2xl mr-3 ${
+                    selectedCategory === cat 
+                      ? 'bg-stone-900 shadow-lg' 
+                      : 'bg-white border border-stone-100'
+                  }`}
+                >
+                  <Text className={`text-[10px] font-black uppercase tracking-widest ${
+                    selectedCategory === cat ? 'text-white' : 'text-stone-400'
+                  }`}>
                     {cat as string}
-                  </button>
-                ))}
-              </div>
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-              {/* Menu Grid */}
-              <div className="grid grid-cols-1 xs:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-                {filteredItems.map((item: any) => (
-                  <motion.div 
-                    layout
-                    key={item._id}
-                    className="bg-white p-4 sm:p-5 rounded-[2rem] sm:rounded-[2.5rem] border border-stone-100 shadow-sm hover:shadow-xl hover:shadow-stone-200/50 transition-all group"
-                  >
-                    <div className="relative h-32 sm:h-48 mb-3 sm:mb-4 overflow-hidden rounded-xl sm:rounded-2xl bg-stone-100">
-                      {item.imageUrl ? (
-                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-stone-300">
-                          <Coffee size={32} className="sm:w-12 sm:h-12" strokeWidth={1.5} />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1 sm:mb-2">
-                      <h3 className="text-sm sm:text-lg font-black text-stone-800 truncate">{item.name}</h3>
-                      <p className="text-sm sm:text-lg font-black text-amber-700">Rs. {item.price}</p>
-                    </div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest ${
-                        item.stockQuantity <= (item.lowStockThreshold || 10) ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
+            <View className="flex-row flex-wrap justify-between">
+              {filteredItems.map((item: any) => (
+                <View 
+                  key={item._id}
+                  className="bg-white p-4 rounded-[2.5rem] border border-stone-100 shadow-sm w-[48%] mb-4"
+                >
+                  <View className="h-32 mb-3 overflow-hidden rounded-2xl bg-stone-100">
+                    {item.imageUrl ? (
+                      <Image source={{ uri: item.imageUrl }} className="w-full h-full object-cover" />
+                    ) : (
+                      <View className="w-full h-full flex items-center justify-center">
+                        <Coffee size={32} color="#d6d3d1" />
+                      </View>
+                    )}
+                  </View>
+                  <Text className="text-sm font-black text-stone-800" numberOfLines={1}>{item.name}</Text>
+                  <Text className="text-sm font-black text-amber-700 mt-1">Rs. {item.price}</Text>
+                  
+                  <View className="flex-row items-center mt-2 mb-3">
+                    <View className={`px-2 py-0.5 rounded-md ${
+                      item.stockQuantity <= (item.lowStockThreshold || 10) ? 'bg-red-50' : 'bg-emerald-50'
+                    }`}>
+                      <Text className={`text-[8px] font-black uppercase ${
+                        item.stockQuantity <= (item.lowStockThreshold || 10) ? 'text-red-600' : 'text-emerald-600'
                       }`}>
                         Stock: {item.stockQuantity}
-                      </span>
-                    </div>
-                    <p className="text-[10px] sm:text-xs text-stone-400 font-medium line-clamp-2 mb-4 sm:mb-6 h-6 sm:h-8">{item.description}</p>
-                    <button 
-                      onClick={() => addToCart(item)}
-                      disabled={item.stockQuantity <= 0}
-                      className="w-full bg-stone-50 text-stone-800 text-xs sm:text-base font-bold py-2.5 sm:py-3 rounded-xl sm:rounded-2xl hover:bg-stone-900 hover:text-white transition-all flex items-center justify-center gap-2 group/btn disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Plus size={16} className="sm:w-[18px] sm:h-[18px] group-hover/btn:rotate-90 transition-transform" />
-                      {item.stockQuantity <= 0 ? 'Out of Stock' : 'Add to Order'}
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <TouchableOpacity 
+                    onPress={() => addToCart(item)}
+                    disabled={item.stockQuantity <= 0}
+                    className="w-full bg-stone-50 py-2.5 rounded-2xl flex-row items-center justify-center gap-2"
+                  >
+                    <Plus size={14} color={item.stockQuantity <= 0 ? '#d6d3d1' : '#1c1917'} />
+                    <Text className="text-stone-800 text-[10px] font-bold">
+                      {item.stockQuantity <= 0 ? 'Out of Stock' : 'Add'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          </View>
         );
       case 'orders':
         return (
-          <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div>
-                <h2 className="text-3xl font-black text-stone-800">Order History</h2>
-                <p className="text-stone-400 text-sm font-medium mt-1">Track your active and past orders.</p>
-              </div>
+          <View className="space-y-6">
+            <View className="flex-row justify-between items-center">
+              <View>
+                <Text className="text-2xl font-black text-stone-800">Orders</Text>
+                <Text className="text-stone-400 text-xs font-medium mt-1">Track your active orders.</Text>
+              </View>
               {orders.some((o: any) => o.status === 'Paid' || o.status === 'Cancelled') && (
-                <button 
-                  onClick={onClearOrderHistory}
-                  className="flex items-center gap-2 bg-stone-100 text-stone-600 px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-stone-200 transition-all"
+                <TouchableOpacity 
+                  onPress={onClearOrderHistory}
+                  className="bg-stone-100 p-2 rounded-xl"
                 >
-                  <Trash2 size={18} />
-                  Clear History
-                </button>
+                  <Trash2 size={18} color="#78716c" />
+                </TouchableOpacity>
               )}
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {!Array.isArray(orders) || orders.length === 0 ? (
-                <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
-                  <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
-                    <Clock size={40} />
-                  </div>
-                  <h3 className="text-xl font-black text-stone-800">No orders yet</h3>
-                  <p className="text-stone-400 text-sm mt-2">Start ordering from our fresh menu!</p>
-                </div>
+            </View>
+            
+            <View className="gap-4">
+              {(!Array.isArray(orders) || orders.length === 0) ? (
+                <View className="bg-white p-12 rounded-[2.5rem] border border-stone-100 items-center">
+                  <View className="bg-stone-50 w-16 h-16 rounded-full items-center justify-center mb-6">
+                    <Clock size={32} color="#e7e5e4" />
+                  </View>
+                  <Text className="text-lg font-black text-stone-800">No orders yet</Text>
+                  <Text className="text-stone-400 text-xs mt-2">Start ordering from our menu!</Text>
+                </View>
               ) : (
                 orders.map((order: any) => (
-                  <div key={order._id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-amber-50 p-3 rounded-2xl text-amber-700">
-                        <ShoppingCart size={24} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-stone-800">Order #{order?._id ? order._id.slice(-6).toUpperCase() : 'N/A'}</p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {order?.items && Array.isArray(order.items) && order.items.map((item: any, idx: number) => (
-                            <span key={idx} className="text-[9px] font-bold bg-stone-50 text-stone-500 px-1.5 py-0.5 rounded">
-                              {item.menuItem?.name || 'Item'} x{item.quantity}
-                            </span>
-                          ))}
-                        </div>
-                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mt-1">
-                          {order?.createdAt ? new Date(order.createdAt).toLocaleString() : 'Date N/A'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-8">
-                      <div className="text-right">
-                        <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Total</p>
-                        <p className="text-lg font-black text-stone-800">Rs. {order.totalAmount}</p>
-                      </div>
-                      <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${
-                        order.status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 
-                        order.status === 'Cancelled' ? 'bg-red-100 text-red-700' : 
-                        'bg-amber-100 text-amber-700'
+                  <View key={order._id} className="bg-white p-5 rounded-[2rem] border border-stone-100 shadow-sm">
+                    <View className="flex-row items-center gap-4 mb-4">
+                      <View className="bg-amber-50 p-3 rounded-2xl">
+                        <ShoppingCart size={20} color="#b45309" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-xs font-black text-stone-800">Order #{order?._id ? order._id.slice(-6).toUpperCase() : 'N/A'}</Text>
+                        <Text className="text-[10px] font-bold text-stone-400 mt-1">
+                          {order?.createdAt ? new Date(order.createdAt).toLocaleString() : ''}
+                        </Text>
+                      </View>
+                      <View className={`px-3 py-1 rounded-full ${
+                        order.status === 'Paid' ? 'bg-emerald-100' : 
+                        order.status === 'Cancelled' ? 'bg-red-100' : 
+                        'bg-amber-100'
                       }`}>
-                        {order.status}
-                      </div>
-                      {order.status !== 'Paid' && order.status !== 'Cancelled' && (
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleEditOrder(order)}
-                            className="flex items-center gap-2 bg-amber-50 text-amber-700 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-100 transition-all"
+                        <Text className={`text-[8px] font-black uppercase ${
+                          order.status === 'Paid' ? 'text-emerald-700' : 
+                          order.status === 'Cancelled' ? 'text-red-700' : 
+                          'text-amber-700'
+                        }`}>
+                          {order.status}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View className="flex-row items-center justify-between pt-4 border-t border-stone-50">
+                      <View>
+                        <Text className="text-[10px] font-black text-stone-400 uppercase">Total</Text>
+                        <Text className="text-lg font-black text-stone-800">Rs. {order.totalAmount}</Text>
+                      </View>
+                      
+                      <View className="flex-row gap-2">
+                        {order.status !== 'Paid' && order.status !== 'Cancelled' && (
+                          <>
+                            <TouchableOpacity 
+                              onPress={() => handleEditOrder(order)}
+                              className="bg-amber-50 p-3 rounded-xl"
+                            >
+                              <Plus size={16} color="#b45309" />
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                              onPress={() => setSelectedOrderForPayment(order)}
+                              className="bg-stone-900 px-4 py-3 rounded-xl flex-row items-center gap-2"
+                            >
+                              <Wallet size={16} color="white" />
+                              <Text className="text-white text-[10px] font-black uppercase">Pay</Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
+                        {order.status === 'Paid' && (
+                          <TouchableOpacity 
+                            onPress={() => setShowFeedbackForm(order._id)}
+                            className="bg-amber-50 p-3 rounded-xl"
                           >
-                            <Plus size={14} />
-                            Edit
-                          </button>
-                          <button 
-                            onClick={() => setSelectedOrderForPayment(order)}
-                            className="flex items-center gap-2 bg-stone-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-900/10"
-                          >
-                            <Wallet size={14} />
-                            Pay Now
-                          </button>
-                        </div>
-                      )}
-                      {order.status === 'Paid' && (
-                        <button 
-                          onClick={() => setShowFeedbackForm(order._id)}
-                          className="p-2 bg-amber-50 text-amber-600 rounded-xl hover:bg-amber-100 transition-colors"
-                          title="Leave Feedback"
-                        >
-                          <Star size={18} fill="currentColor" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                            <Star size={16} color="#d97706" fill="#d97706" />
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  </View>
                 ))
               )}
-            </div>
-          </div>
+            </View>
+          </View>
         );
 
       case 'reservations':
         const myReservations = Array.isArray(reservations) ? reservations.filter((res: any) => res && res.user === user?._id) : [];
         return (
-          <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div>
-                <h2 className="text-3xl font-black text-stone-800">My Reservations</h2>
-                <p className="text-stone-400 text-sm font-medium mt-1">Manage your table bookings.</p>
-              </div>
-              <button 
-                onClick={() => setShowReservationForm(true)}
-                className="flex items-center gap-2 bg-stone-900 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-stone-900/10"
+          <View className="space-y-6">
+            <View className="flex-row justify-between items-center">
+              <View>
+                <Text className="text-2xl font-black text-stone-800">Reservations</Text>
+                <Text className="text-stone-400 text-xs font-medium mt-1">Manage your bookings.</Text>
+              </View>
+              <TouchableOpacity 
+                onPress={() => setShowReservationForm(true)}
+                className="bg-stone-900 p-3 rounded-xl"
               >
-                <PlusCircle size={18} />
-                Book a Table
-              </button>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {!Array.isArray(myReservations) || myReservations.length === 0 ? (
-                <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
-                  <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
-                    <Calendar size={40} />
-                  </div>
-                  <h3 className="text-xl font-black text-stone-800">No reservations</h3>
-                  <p className="text-stone-400 text-sm mt-2">Book a table for your next visit.</p>
-                </div>
+                <PlusCircle size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            <View className="gap-4">
+              {(!Array.isArray(myReservations) || myReservations.length === 0) ? (
+                <View className="bg-white p-12 rounded-[2.5rem] border border-stone-100 items-center">
+                  <View className="bg-stone-50 w-16 h-16 rounded-full items-center justify-center mb-6">
+                    <Calendar size={32} color="#e7e5e4" />
+                  </View>
+                  <Text className="text-lg font-black text-stone-800">No reservations</Text>
+                  <Text className="text-stone-400 text-xs mt-2">Book a table for your next visit.</Text>
+                </View>
               ) : (
                 myReservations.map((res: any) => (
-                  <div key={res._id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-blue-50 p-3 rounded-2xl text-blue-700">
-                        <Calendar size={24} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-stone-800">Table #{res.tableNumber}</p>
-                        <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                  <View key={res._id} className="bg-white p-5 rounded-[2rem] border border-stone-100 shadow-sm">
+                    <View className="flex-row items-center gap-4 mb-4">
+                      <View className="bg-blue-50 p-3 rounded-2xl">
+                        <Calendar size={20} color="#1d4ed8" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-xs font-black text-stone-800">Table #{res.tableNumber}</Text>
+                        <Text className="text-[10px] font-bold text-stone-400 mt-1">
                           {new Date(res.reservationTime).toLocaleDateString()} at {new Date(res.reservationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-8">
-                      <div className="text-right">
-                        <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Guests</p>
-                        <p className="text-lg font-black text-stone-800">{res.numberOfGuests} People</p>
-                      </div>
-                      <div className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${
-                        res.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-700' : 
-                        res.status === 'Cancelled' ? 'bg-red-100 text-red-700' : 
-                        'bg-amber-100 text-amber-700'
+                        </Text>
+                      </View>
+                      <View className={`px-3 py-1 rounded-full ${
+                        res.status === 'Confirmed' ? 'bg-emerald-100' : 
+                        res.status === 'Cancelled' ? 'bg-red-100' : 
+                        'bg-amber-100'
                       }`}>
-                        {res.status}
-                      </div>
+                        <Text className={`text-[8px] font-black uppercase ${
+                          res.status === 'Confirmed' ? 'text-emerald-700' : 
+                          res.status === 'Cancelled' ? 'text-red-700' : 
+                          'text-amber-700'
+                        }`}>
+                          {res.status}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View className="flex-row items-center justify-between pt-4 border-t border-stone-50">
+                      <View>
+                        <Text className="text-[10px] font-black text-stone-400 uppercase">Guests</Text>
+                        <Text className="text-lg font-black text-stone-800">{res.numberOfGuests} People</Text>
+                      </View>
+                      
                       {(res.status === 'Pending' || res.status === 'Confirmed') && (
-                        <button 
-                          onClick={() => onCancelReservation(res._id)}
-                          className="p-2 hover:bg-red-50 text-red-400 rounded-xl transition-colors"
-                          title="Cancel Reservation"
+                        <TouchableOpacity 
+                          onPress={() => onCancelReservation(res._id)}
+                          className="bg-red-50 p-3 rounded-xl"
                         >
-                          <XCircle size={20} />
-                        </button>
+                          <XCircle size={18} color="#f87171" />
+                        </TouchableOpacity>
                       )}
-                    </div>
-                  </div>
+                    </View>
+                  </View>
                 ))
               )}
-            </div>
-            <ReservationForm 
-              isOpen={showReservationForm}
-              onClose={() => setShowReservationForm(false)}
-              onSuccess={() => {
-                onUpdate();
-                setShowReservationForm(false);
-              }}
-              token={token}
-              reservations={reservations}
-              orders={orders}
-              tables={tables}
-            />
-          </div>
+            </View>
+          </View>
         );
 
       case 'payments':
         const pendingOrders = Array.isArray(orders) ? orders.filter((o: any) => o && o.status !== 'Paid' && o.status !== 'Cancelled') : [];
         return (
-          <div className="space-y-12">
-            {/* Pending Payments */}
+          <View className="space-y-8">
             {pendingOrders.length > 0 && (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-black text-stone-800">Pending Payments</h2>
-                  <p className="text-stone-400 text-xs font-medium mt-1">Select an order below to complete your payment.</p>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
+              <View className="space-y-4">
+                <Text className="text-xl font-black text-stone-800 px-1">Pending Payments</Text>
+                <View className="gap-4">
                   {pendingOrders.map((order: any) => (
-                    <div key={order._id} className="bg-amber-50/50 p-6 rounded-[2rem] border border-amber-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-amber-100 p-3 rounded-2xl text-amber-700">
-                          <Clock size={24} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-stone-800">Order #{order?._id ? order._id.slice(-6).toUpperCase() : 'N/A'}</p>
-                          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Total: Rs. {order?.totalAmount || 0}</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setSelectedOrderForPayment(order)}
-                        className="bg-stone-900 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-stone-900/10 flex items-center gap-2"
+                    <View key={order._id} className="bg-amber-50 p-6 rounded-[2rem] border border-amber-100 flex-row items-center">
+                      <View className="bg-amber-100 p-3 rounded-2xl mr-4">
+                        <Clock size={20} color="#b45309" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-sm font-black text-stone-800">Order #{order?._id?.slice(-6).toUpperCase()}</Text>
+                        <Text className="text-[10px] font-bold text-stone-400 uppercase">Rs. {order?.totalAmount}</Text>
+                      </View>
+                      <TouchableOpacity 
+                        onPress={() => setSelectedOrderForPayment(order)}
+                        className="bg-stone-900 p-4 rounded-2xl"
                       >
-                        <CreditCard size={16} />
-                        Pay Now
-                      </button>
-                    </div>
+                        <CreditCard size={18} color="white" />
+                      </TouchableOpacity>
+                    </View>
                   ))}
-                </div>
-              </div>
+                </View>
+              </View>
             )}
 
-            {/* Payment History */}
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-black text-stone-800">Payment History</h2>
-                <p className="text-stone-400 text-xs font-medium mt-1">Review your past transactions.</p>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {!Array.isArray(payments) || payments.length === 0 ? (
-                  <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
-                    <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
-                      <CreditCard size={40} />
-                    </div>
-                    <h3 className="text-xl font-black text-stone-800">No payments</h3>
-                    <p className="text-stone-400 text-sm mt-2">Your payment history will appear here.</p>
-                  </div>
+            <View className="space-y-4">
+              <Text className="text-xl font-black text-stone-800 px-1">Payment History</Text>
+              <View className="gap-4">
+                {(!Array.isArray(payments) || payments.length === 0) ? (
+                  <View className="bg-white p-12 rounded-[2.5rem] border border-stone-100 items-center">
+                    <View className="bg-stone-50 w-16 h-16 rounded-full items-center justify-center mb-6">
+                      <CreditCard size={32} color="#e7e5e4" />
+                    </View>
+                    <Text className="text-lg font-black text-stone-800">No payments</Text>
+                  </View>
                 ) : (
                   payments.map((payment: any) => (
-                    <div key={payment._id} className="bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-emerald-50 p-3 rounded-2xl text-emerald-700">
-                          <CheckCircle size={24} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-stone-800">Payment Successful</p>
-                          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">{new Date(payment.createdAt).toLocaleString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-8">
-                        <div className="text-right">
-                          <p className="text-xs font-black text-stone-400 uppercase tracking-widest">Amount Paid</p>
-                          <p className="text-lg font-black text-stone-800">Rs. {payment.amount}</p>
-                        </div>
-                        <div className="px-4 py-2 bg-stone-50 rounded-xl text-[10px] font-black uppercase tracking-widest text-stone-400">
-                          {payment.paymentMethod}
-                        </div>
-                      </div>
-                    </div>
+                    <View key={payment._id} className="bg-white p-5 rounded-[2rem] border border-stone-100 flex-row items-center">
+                      <View className="bg-emerald-50 p-3 rounded-2xl mr-4">
+                        <CheckCircle size={20} color="#059669" />
+                      </View>
+                      <View className="flex-1">
+                        <Text className="text-sm font-black text-stone-800">Successful</Text>
+                        <Text className="text-[10px] font-bold text-stone-400">{new Date(payment.createdAt).toLocaleString()}</Text>
+                      </View>
+                      <View className="items-end">
+                        <Text className="text-sm font-black text-stone-800">Rs. {payment.amount}</Text>
+                        <Text className="text-[8px] font-black uppercase text-stone-400 mt-1">{payment.paymentMethod}</Text>
+                      </View>
+                    </View>
                   ))
                 )}
-              </div>
-            </div>
-          </div>
+              </View>
+            </View>
+          </View>
         );
 
       default:
-        return (
-          <div className="bg-white p-12 rounded-[2.5rem] border border-stone-100 shadow-sm text-center">
-            <div className="bg-stone-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-300">
-              <AlertCircle size={40} />
-            </div>
-            <h3 className="text-xl font-black text-stone-800">Feature Coming Soon</h3>
-            <p className="text-stone-400 text-sm mt-2">We are working hard to bring this feature to your customer experience.</p>
-          </div>
-        );
+        return null;
     }
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-120px)]">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2 }}
-        >
-          {renderContent()}
-        </motion.div>
-      </AnimatePresence>
+    <View className="flex-1 px-4 py-4">
+      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+        {renderContent()}
+        <View className="h-24" />
+      </ScrollView>
 
       {/* Modals */}
       {showFeedbackForm && (
@@ -537,28 +477,22 @@ export function CustomerView({
         />
       )}
 
-      {/* Floating Cart Button - Accessible from any tab */}
-      <AnimatePresence>
-        {cart.length > 0 && activeTab !== 'orders' && (
-          <motion.button
-            initial={{ scale: 0, y: 20, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0, y: 20, opacity: 0 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowCartModal(true)}
-            className="fixed bottom-8 right-6 sm:right-10 z-[100] bg-stone-900 text-white p-4 sm:p-5 rounded-[2rem] shadow-2xl flex items-center gap-3 border border-white/10"
-          >
-            <div className="relative">
-              <ShoppingBag size={24} strokeWidth={2.5} />
-              <span className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-lg border-2 border-stone-900">
+      {/* Floating Cart Button */}
+      {cart.length > 0 && activeTab !== 'orders' && !showCartModal && (
+        <TouchableOpacity
+          onPress={() => setShowCartModal(true)}
+          className="absolute bottom-8 right-6 bg-stone-900 px-6 py-5 rounded-full shadow-2xl flex-row items-center gap-3 border border-white/10 z-50"
+        >
+          <View className="relative">
+            <ShoppingBag size={24} color="white" />
+            <View className="absolute -top-2 -right-2 bg-amber-500 w-5 h-5 rounded-full items-center justify-center border-2 border-stone-900">
+              <Text className="text-white text-[10px] font-black">
                 {cart.reduce((acc, item) => acc + item.quantity, 0)}
-              </span>
-            </div>
-            <span className="text-xs font-black uppercase tracking-widest hidden sm:block">View Order</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      )}
 
       {/* Fullscreen Cart Modal */}
       <CartModal 
@@ -584,6 +518,20 @@ export function CustomerView({
         loading={loading}
         addNotification={addNotification}
       />
-    </div>
+
+      <ReservationForm 
+        isOpen={showReservationForm}
+        onClose={() => setShowReservationForm(false)}
+        onSuccess={() => {
+          onUpdate();
+          setShowReservationForm(false);
+        }}
+        token={token}
+        reservations={reservations}
+        orders={orders}
+        tables={tables}
+      />
+    </View>
   );
 }
+

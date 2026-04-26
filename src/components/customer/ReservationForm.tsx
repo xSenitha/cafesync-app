@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar, Users, Phone, User, Clock, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { View, Text, TouchableOpacity, TextInput, Modal, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { Calendar, Users, Phone, User as UserIcon, Clock, CheckCircle, AlertCircle, X } from 'lucide-react-native';
 import { API_BASE_URL } from '../../config';
 
 interface ReservationFormProps {
@@ -33,7 +33,6 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
     const selectedTime = new Date(`${formData.reservationDate}T${formData.reservationTime}`);
     const now = new Date();
     
-    // 1. Check if table is currently occupied by an order (if booking for today and close to now)
     const isToday = selectedTime.toDateString() === now.toDateString();
     if (isToday && orders && Array.isArray(orders)) {
       const activeOrder = orders.find(o => 
@@ -42,14 +41,12 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
       );
       
       if (activeOrder) {
-        // If there's an active order, and the reservation is within the next 2 hours, it's blocked
         const timeDiffMs = selectedTime.getTime() - now.getTime();
         const timeDiffHours = timeDiffMs / (1000 * 60 * 60);
         if (timeDiffHours < 2) return true;
       }
     }
 
-    // 2. Check for other reservations in a 2-hour window
     if (!reservations || !Array.isArray(reservations)) return false;
 
     return reservations.some(r => {
@@ -71,8 +68,11 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
     }
   }, [formData.reservationDate, formData.reservationTime, reservations, orders]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!formData.tableNumber) {
+      Alert.alert('Error', 'Please select a table');
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -123,207 +123,172 @@ export function ReservationForm({ isOpen, onClose, onSuccess, token, reservation
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden"
-          >
-            <div className="p-8">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl font-black text-stone-800">Book a Table</h2>
-                  <p className="text-stone-400 text-xs font-medium mt-1">Reserve your spot at CafeSync</p>
-                </div>
-                <button onClick={onClose} className="p-2 hover:bg-stone-100 rounded-full transition-colors">
-                  <X size={24} className="text-stone-400" />
-                </button>
-              </div>
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={isOpen}
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 bg-black/60 justify-end">
+        <View className="bg-white rounded-t-[3rem] h-[90%] overflow-hidden">
+          <View className="p-8 pb-4 flex-row justify-between items-center border-b border-stone-50">
+            <View>
+              <Text className="text-2xl font-black text-stone-800">Book a Table</Text>
+              <Text className="text-stone-400 text-xs font-medium mt-1">Reserve your spot at CafeSync</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} className="p-2 bg-stone-50 rounded-full">
+              <X size={24} color="#a8a29e" />
+            </TouchableOpacity>
+          </View>
 
-              {success ? (
-                <div className="py-12 text-center">
-                  <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle size={40} />
-                  </div>
-                  <h3 className="text-xl font-black text-stone-800">Reservation Confirmed!</h3>
-                  <p className="text-stone-500 font-medium mt-2">We look forward to seeing you.</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Name</label>
-                      <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-                        <input
-                          required
-                          type="text"
-                          value={formData.customerName}
-                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                          className="w-full pl-12 pr-4 py-3.5 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          placeholder="Your Name"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Phone</label>
-                      <div className="relative">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-                        <input
-                          required
-                          type="tel"
-                          value={formData.customerPhone}
-                          onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                          className="w-full pl-12 pr-4 py-3.5 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                          placeholder="Phone Number"
-                        />
-                      </div>
-                    </div>
-                  </div>
+          <ScrollView className="p-8" showsVerticalScrollIndicator={false}>
+            {success ? (
+              <View className="py-12 items-center">
+                <View className="w-20 h-20 bg-emerald-100 rounded-full items-center justify-center mb-6">
+                  <CheckCircle size={40} color="#059669" />
+                </View>
+                <Text className="text-xl font-black text-stone-800">Reservation Confirmed!</Text>
+                <Text className="text-stone-500 font-medium mt-2">We look forward to seeing you.</Text>
+              </View>
+            ) : (
+              <View className="space-y-6">
+                <View className="flex-row gap-4">
+                  <View className="flex-1 space-y-2">
+                    <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Name</Text>
+                    <View className="flex-row items-center bg-stone-50 border border-stone-100 rounded-2xl px-4 py-3.5">
+                      <UserIcon size={18} color="#a8a29e" />
+                      <TextInput
+                        className="flex-1 ml-3 text-sm font-bold"
+                        placeholder="Your Name"
+                        value={formData.customerName}
+                        onChangeText={(text) => setFormData({ ...formData, customerName: text })}
+                      />
+                    </View>
+                  </View>
+                  <View className="flex-1 space-y-2">
+                    <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Phone</Text>
+                    <View className="flex-row items-center bg-stone-50 border border-stone-100 rounded-2xl px-4 py-3.5">
+                      <Phone size={18} color="#a8a29e" />
+                      <TextInput
+                        className="flex-1 ml-3 text-sm font-bold"
+                        placeholder="Phone"
+                        keyboardType="phone-pad"
+                        value={formData.customerPhone}
+                        onChangeText={(text) => setFormData({ ...formData, customerPhone: text })}
+                      />
+                    </View>
+                  </View>
+                </View>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Date</label>
-                      <div className="relative">
-                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-                        <input
-                          required
-                          type="date"
-                          min={new Date().toISOString().split('T')[0]}
-                          value={formData.reservationDate}
-                          onChange={(e) => setFormData({ ...formData, reservationDate: e.target.value })}
-                          className="w-full pl-12 pr-4 py-3.5 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Time</label>
-                      <div className="relative">
-                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-                        <input
-                          required
-                          type="time"
-                          value={formData.reservationTime}
-                          onChange={(e) => setFormData({ ...formData, reservationTime: e.target.value })}
-                          className="w-full pl-12 pr-4 py-3.5 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <View className="flex-row gap-4">
+                  <View className="flex-1 space-y-2">
+                    <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Date (YYYY-MM-DD)</Text>
+                    <View className="flex-row items-center bg-stone-50 border border-stone-100 rounded-2xl px-4 py-3.5">
+                      <Calendar size={18} color="#a8a29e" />
+                      <TextInput
+                        className="flex-1 ml-3 text-sm font-bold"
+                        placeholder="2024-01-01"
+                        value={formData.reservationDate}
+                        onChangeText={(text) => setFormData({ ...formData, reservationDate: text })}
+                      />
+                    </View>
+                  </View>
+                  <View className="flex-1 space-y-2">
+                    <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Time (HH:MM)</Text>
+                    <View className="flex-row items-center bg-stone-50 border border-stone-100 rounded-2xl px-4 py-3.5">
+                      <Clock size={18} color="#a8a29e" />
+                      <TextInput
+                        className="flex-1 ml-3 text-sm font-bold"
+                        placeholder="12:00"
+                        value={formData.reservationTime}
+                        onChangeText={(text) => setFormData({ ...formData, reservationTime: text })}
+                      />
+                    </View>
+                  </View>
+                </View>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Guests</label>
-                      <div className="relative">
-                        <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-                        <input
-                          required
-                          type="number"
-                          min="1"
-                          max="20"
-                          value={formData.numberOfGuests}
-                          onChange={(e) => setFormData({ ...formData, numberOfGuests: parseInt(e.target.value) })}
-                          className="w-full pl-12 pr-4 py-3.5 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <View className="space-y-4">
+                  <View className="flex-row items-center justify-between">
+                    <View>
+                      <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Select Table</Text>
+                      <Text className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest ml-1">
+                        {availableTablesCount} Styles Available
+                      </Text>
+                    </View>
+                    <View className="flex-row gap-3">
+                      <View className="flex-row items-center gap-1">
+                        <View className="w-1.5 h-1.5 rounded-full bg-stone-100 border border-stone-200" />
+                        <Text className="text-[8px] font-bold text-stone-400 uppercase">Free</Text>
+                      </View>
+                      <View className="flex-row items-center gap-1">
+                        <View className="w-1.5 h-1.5 rounded-full bg-amber-100 border border-amber-200" />
+                        <Text className="text-[8px] font-bold text-stone-400 uppercase">Busy</Text>
+                      </View>
+                    </View>
+                  </View>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Select Table</label>
-                        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest ml-1">
-                          {availableTablesCount} Tables Available
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-stone-100 border border-stone-200" />
-                          <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">Free</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-amber-100 border border-amber-200" />
-                          <span className="text-[8px] font-bold text-stone-400 uppercase tracking-widest">Reserved</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-6 gap-2">
-                      {tables.map((table) => {
-                        const reserved = isTableReserved(table.number);
-                        return (
-                          <button
-                            key={table._id}
-                            type="button"
-                            disabled={reserved}
-                            onClick={() => setFormData({ ...formData, tableNumber: table.number })}
-                            className={`py-2.5 rounded-xl text-[10px] font-black transition-all border-2 flex flex-col items-center gap-0.5 ${
-                              formData.tableNumber === table.number
-                                ? 'bg-stone-900 border-stone-900 text-white shadow-lg shadow-stone-900/20' 
-                                : reserved
-                                  ? 'bg-amber-50 border-amber-100 text-amber-700 cursor-not-allowed opacity-60'
-                                  : 'bg-stone-50 border-stone-100 text-stone-400 hover:border-stone-200'
-                            }`}
-                          >
-                            <span className="text-[8px] opacity-50">T</span>
+                  <View className="flex-row flex-wrap gap-2">
+                    {tables.map((table) => {
+                      const reserved = isTableReserved(table.number);
+                      const isSelected = formData.tableNumber === table.number;
+                      return (
+                        <TouchableOpacity
+                          key={table._id}
+                          disabled={reserved}
+                          onPress={() => setFormData({ ...formData, tableNumber: table.number })}
+                          className={`w-[15%] py-3 rounded-xl items-center border-2 ${
+                            isSelected ? 'bg-stone-900 border-stone-900' : 
+                            reserved ? 'bg-amber-50 border-amber-100 opacity-60' : 
+                            'bg-stone-50 border-stone-100'
+                          }`}
+                        >
+                          <Text className={`text-[8px] font-bold ${isSelected ? 'text-stone-400' : 'text-stone-300'}`}>T</Text>
+                          <Text className={`text-[10px] font-black ${isSelected ? 'text-white' : (reserved ? 'text-amber-700' : 'text-stone-400')}`}>
                             {table.number}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {tables.length === 0 && (
-                      <div className="text-center py-4 text-[10px] font-bold text-stone-400 uppercase tracking-widest border-2 border-dashed border-stone-100 rounded-2xl">
-                        No tables configured.
-                      </div>
-                    )}
-                    {formData.tableNumber > 0 && isTableReserved(formData.tableNumber) && (
-                      <div className="flex items-center gap-2 p-3 bg-amber-50 text-amber-700 rounded-xl text-[9px] font-bold border border-amber-100">
-                        <AlertCircle size={14} />
-                        This table is already reserved for the selected date.
-                      </div>
-                    )}
-                  </div>
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
 
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Special Notes</label>
-                    <textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="w-full px-4 py-3.5 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all h-24 resize-none"
-                      placeholder="Any special requests?"
-                    />
-                  </div>
+                <View className="space-y-2">
+                  <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Special Notes</Text>
+                  <TextInput
+                    multiline
+                    numberOfLines={4}
+                    value={formData.notes}
+                    onChangeText={(text) => setFormData({ ...formData, notes: text })}
+                    className="w-full px-4 py-3 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold min-h-[100px]"
+                    placeholder="Any special requests?"
+                    textAlignVertical="top"
+                  />
+                </View>
 
-                  {error && (
-                    <div className="flex items-center gap-2 p-4 bg-red-50 text-red-600 rounded-2xl text-xs font-bold">
-                      <AlertCircle size={16} />
-                      {error}
-                    </div>
+                {error && (
+                  <View className="flex-row items-center gap-2 p-4 bg-red-50 rounded-2xl">
+                    <AlertCircle size={16} color="#dc2626" />
+                    <Text className="text-red-600 text-xs font-bold flex-1">{error}</Text>
+                  </View>
+                )}
+
+                <TouchableOpacity
+                  onPress={handleSubmit}
+                  disabled={loading}
+                  className={`bg-stone-900 py-5 rounded-3xl items-center mb-10 ${loading ? 'opacity-50' : ''}`}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text className="text-white text-sm font-black uppercase tracking-widest">Confirm Booking</Text>
                   )}
-
-                  <button
-                    disabled={loading}
-                    type="submit"
-                    className="w-full bg-stone-900 text-white py-4 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-stone-800 transition-all disabled:opacity-50 shadow-xl shadow-stone-900/20"
-                  >
-                    {loading ? 'Processing...' : 'Confirm Booking'}
-                  </button>
-                </form>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
+

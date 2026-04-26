@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { motion } from 'motion/react';
-import { Star, Send, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, TextInput, Modal, ActivityIndicator, Alert } from 'react-native';
+import { Star, Send, X } from 'lucide-react-native';
 import { API_BASE_URL } from '../../config';
 
 interface FeedbackFormProps {
@@ -15,8 +15,7 @@ export function FeedbackForm({ orderId, onClose, onSuccess, token }: FeedbackFor
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/feedback`, {
@@ -30,70 +29,89 @@ export function FeedbackForm({ orderId, onClose, onSuccess, token }: FeedbackFor
       if (res.ok) {
         onSuccess();
         onClose();
+        Alert.alert('Success', 'Thank you for your feedback!');
       }
     } catch (err) {
       console.error('Feedback error:', err);
+      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={!!orderId}
+      onRequestClose={onClose}
     >
-      <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        className="bg-white w-full max-w-md rounded-[3rem] p-8 shadow-2xl relative"
-      >
-        <button onClick={onClose} className="absolute top-6 right-6 p-2 hover:bg-stone-100 rounded-full text-stone-400 transition-colors">
-          <X size={20} />
-        </button>
-
-        <div className="text-center mb-8">
-          <div className="bg-amber-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-600">
-            <Star size={32} fill="currentColor" />
-          </div>
-          <h3 className="text-2xl font-black text-stone-800">Rate Your Experience</h3>
-          <p className="text-stone-400 text-sm font-medium mt-1">How was your meal at CafeSync?</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex justify-center gap-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => setRating(star)}
-                className={`p-2 transition-all ${star <= rating ? 'text-amber-500 scale-110' : 'text-stone-200'}`}
-              >
-                <Star size={32} fill={star <= rating ? 'currentColor' : 'none'} strokeWidth={2.5} />
-              </button>
-            ))}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-4">Your Comments</label>
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Tell us what you liked or how we can improve..."
-              className="w-full bg-stone-50 border border-stone-100 rounded-3xl p-6 text-sm font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500 min-h-[120px] resize-none"
-            />
-          </div>
-
-          <button
-            disabled={loading}
-            className="w-full bg-stone-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-xl shadow-stone-900/10 flex items-center justify-center gap-2 disabled:opacity-50"
+      <View className="flex-1 bg-black/40 items-center justify-center p-4">
+        <View className="bg-white w-full max-w-md rounded-[3rem] p-8 shadow-2xl relative">
+          <TouchableOpacity 
+            onPress={onClose} 
+            className="absolute top-6 right-6 p-2 bg-stone-50 rounded-full"
           >
-            {loading ? 'Sending...' : 'Submit Feedback'}
-            <Send size={18} />
-          </button>
-        </form>
-      </motion.div>
-    </motion.div>
+            <X size={20} color="#a8a29e" />
+          </TouchableOpacity>
+
+          <View className="items-center mb-8">
+            <View className="bg-amber-50 w-16 h-16 rounded-full items-center justify-center mb-4">
+              <Star size={32} color="#d97706" fill="#d97706" />
+            </View>
+            <Text className="text-2xl font-black text-stone-800">Rate Your Experience</Text>
+            <Text className="text-stone-400 text-sm font-medium mt-1">How was your meal at CafeSync?</Text>
+          </View>
+
+          <View className="space-y-6">
+            <View className="flex-row justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity
+                  key={star}
+                  onPress={() => setRating(star)}
+                  className="p-2"
+                >
+                  <Star 
+                    size={32} 
+                    color={star <= rating ? '#f59e0b' : '#e7e5e4'} 
+                    fill={star <= rating ? '#f59e0b' : 'none'} 
+                    strokeWidth={2.5} 
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View className="space-y-2">
+              <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-4">Your Comments</Text>
+              <TextInput
+                value={comment}
+                onChangeText={setComment}
+                placeholder="Tell us what you liked or how we can improve..."
+                multiline
+                numberOfLines={4}
+                className="w-full bg-stone-50 border border-stone-100 rounded-3xl p-6 text-sm font-bold text-stone-800 min-h-[120px]"
+                textAlignVertical="top"
+              />
+            </View>
+
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={loading}
+              className={`w-full bg-stone-900 py-4 rounded-2xl flex-row items-center justify-center gap-2 ${loading ? 'opacity-50' : ''}`}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <Text className="text-white font-bold text-base">Submit Feedback</Text>
+                  <Send size={18} color="white" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
+

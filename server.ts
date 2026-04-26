@@ -3,149 +3,13 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
-import dns from 'dns';
 
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
-
+// Load environment variables
 dotenv.config();
 
-const app = express();
-const PORT = 3000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-
-// Models for Seeding
-import User from './server/models/User.ts';
-import MenuItem from './server/models/MenuItem.ts';
-import Order from './server/models/Order.ts';
-import Payment from './server/models/Payment.ts';
-import Reservation from './server/models/Reservation.ts';
-import Table from './server/models/Table.ts';
-
-// Seed Data Function
-const seedData = async () => {
-  try {
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log('🌱 Seeding initial users...');
-      const admin = new User({
-        name: 'Admin User',
-        email: 'admin@cafesync.com',
-        password: 'admin123',
-        role: 'admin'
-      });
-      await admin.save();
-
-      const customer = new User({
-        name: 'Saman Kumara',
-        email: 'saman@example.com',
-        password: 'user123',
-        role: 'customer'
-      });
-      await customer.save();
-    }
-
-    const tableCount = await Table.countDocuments();
-    if (tableCount === 0) {
-      console.log('🌱 Seeding initial tables...');
-      const tables = [];
-      for (let i = 1; i <= 12; i++) {
-        tables.push({ number: i, capacity: i % 2 === 0 ? 4 : 2 });
-      }
-      await Table.insertMany(tables);
-    }
-
-    const menuCount = await MenuItem.countDocuments();
-      if (menuCount === 0) {
-        const customer = await User.findOne({ role: 'customer' });
-        if (!customer) return;
-
-        console.log('🌱 Seeding initial menu items...');
-        const items = await MenuItem.insertMany([
-          { name: 'Cappuccino', price: 450, category: 'Beverage', description: 'Rich espresso with steamed milk foam', stockQuantity: 50 },
-          { name: 'Chocolate Cake', price: 650, category: 'Dessert', description: 'Decadent dark chocolate layer cake', stockQuantity: 15 },
-          { name: 'Club Sandwich', price: 850, category: 'Snack', description: 'Classic triple-decker with chicken and egg', stockQuantity: 20 },
-          { name: 'Iced Latte', price: 500, category: 'Beverage', description: 'Chilled espresso with cold milk', stockQuantity: 40 },
-          { name: 'Blueberry Muffin', price: 350, category: 'Dessert', description: 'Freshly baked with real blueberries', stockQuantity: 12 }
-        ]);
-
-        const order1 = await new Order({
-          user: customer._id,
-          customerName: customer.name,
-          tableNumber: 5,
-          items: [{ menuItem: items[0]._id, quantity: 2, price: 450 }],
-          totalAmount: 900,
-          status: 'Paid',
-          orderType: 'Dine-in'
-        }).save();
-
-        await new Payment({
-          orderId: order1._id,
-          amount: 900,
-          paymentMethod: 'Cash',
-          status: 'Completed'
-        }).save();
-
-        await new Order({
-          user: customer._id,
-          customerName: customer.name,
-          tableNumber: 3,
-          items: [{ menuItem: items[2]._id, quantity: 1, price: 850 }],
-          totalAmount: 850,
-          status: 'Pending',
-          orderType: 'Dine-in'
-        }).save();
-
-        await new Reservation({
-          user: customer._id,
-          customerName: customer.name,
-          customerPhone: '0771234567',
-          tableNumber: 10,
-          reservationTime: new Date(Date.now() + 86400000),
-          numberOfGuests: 4,
-          status: 'Confirmed'
-        }).save();
-
-        console.log('✅ Database Seeded Successfully');
-      }
-  } catch (err) {
-    console.error('❌ Seeding error:', err);
-  }
-};
-
-// MongoDB Connection
-// NOTE: If you see "ECONNREFUSED" locally, it's a DNS issue. 
-// 1. Change your DNS to 8.8.8.8 (Google)
-// 2. Or use the "Standard Connection String" (without +srv) from MongoDB Atlas
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://senitha_db_user:nD0htN4MehvHymWd@cluster0.kinvutx.mongodb.net/cafe_db?retryWrites=true&w=majority';
-
-// Example of Standard Connection String (if SRV fails):
-// const MONGODB_URI = 'mongodb://senitha_db_user:nD0htN4MehvHymWd@cluster0-shard-00-00.kinvutx.mongodb.net:27017,cluster0-shard-00-01.kinvutx.mongodb.net:27017,cluster0-shard-00-02.kinvutx.mongodb.net:27017/cafe_db?ssl=true&replicaSet=atlas-xxxxxx-shard-0&authSource=admin&retryWrites=true&w=majority';
-
-let dbStatus = 'Disconnected';
-
-console.log('⏳ Connecting to MongoDB Atlas...');
-mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 5000,
-})
-  .then(() => {
-    console.log('✅ Connected to MongoDB Atlas Successfully!');
-    dbStatus = 'Connected';
-    seedData();
-  })
-  .catch((err) => {
-    dbStatus = `Error: ${err.message}`;
-    console.error('❌ MongoDB Connection Error:', err.message);
-  });
-
-// Disable buffering to see errors immediately
-mongoose.set('bufferCommands', false);
-
-// API Routes
+// Imports for routes
 import authRoutes from './server/routes/auth.ts';
 import menuRoutes from './server/routes/menu.ts';
 import orderRoutes from './server/routes/order.ts';
@@ -154,6 +18,34 @@ import reservationRoutes from './server/routes/reservation.ts';
 import feedbackRoutes from './server/routes/feedback.ts';
 import tableRoutes from './server/routes/table.ts';
 
+const app = express();
+const PORT = 3000;
+
+// 1. Basic Middleware
+app.use(cors());
+app.use(express.json());
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// 2. Start listener immediately
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 CafeSync Server listening at http://0.0.0.0:${PORT}`);
+  
+  // 3. Initialize background services
+  startServer().catch(err => {
+    console.error('💥 Critical Startup Error:', err);
+  });
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'CafeSync API is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Mount API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/orders', orderRoutes);
@@ -162,36 +54,41 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/tables', tableRoutes);
 
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    message: 'CafeSync API is running',
-    database: dbStatus 
-  });
-});
+async function startServer() {
+  console.log('🚀 Initializing CafeSync Management Suite...');
 
-// Auth Routes (To be implemented)
-// app.use('/api/auth', authRoutes);
-
-// Vite Integration for Preview
-async function setupVite() {
+  // 4. Vite Integration for Front-end (Development)
   if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
+    console.log('📦 Integrating Vite for development...');
+    try {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+      console.log('✅ Vite middleware integrated');
+    } catch (vErr) {
+      console.error('❌ Vite integration failed:', vErr);
+    }
   } else {
+    console.log('🚀 Serving production build assets...');
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
+    }
   }
-}
 
-setupVite().then(() => {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  // 5. Global Error Handler
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error('💥 Unhandled Server Error:', err);
+    res.status(500).json({ error: 'Internal Server Error', message: err.message });
   });
-});
+
+  // 6. Connect to MongoDB in background
+  const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://senitha_db_user:nD0htN4MehvHymWd@cluster0.kinvutx.mongodb.net/cafe_db?retryWrites=true&w=majority';
+  console.log('⏳ Connecting to MongoDB Atlas...');
+  mongoose.connect(MONGODB_URI)
+    .then(() => console.log('✅ Connected to MongoDB Atlas'))
+    .catch(err => console.error('❌ MongoDB Connection failed:', err.message));
+}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Trash2, Shield, Mail, User, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { View, Text, TouchableOpacity, ScrollView, Alert, ActivityIndicator, AlertButton } from 'react-native';
+import { Trash2, Shield, Mail, User, ShieldCheck, ShieldAlert } from 'lucide-react-native';
 import { API_BASE_URL } from '../../config';
 
 interface StaffManagementProps {
@@ -53,26 +54,51 @@ export function StaffManagement({ token, currentUser }: StaffManagementProps) {
   };
 
   const deleteUser = async (userId: string) => {
-    if (!window.confirm('Are you sure you want to remove this staff member?')) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    Alert.alert(
+      'Remove Staff',
+      'Are you sure you want to remove this staff member?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Remove', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/api/auth/users/${userId}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              if (res.ok) {
+                fetchUsers();
+              }
+            } catch (err) {
+              console.error('Delete user error:', err);
+            }
+          }
         }
-      });
-      if (res.ok) {
-        fetchUsers();
-      }
-    } catch (err) {
-      console.error('Delete user error:', err);
-    }
+      ]
+    );
+  };
+
+  const handleRoleChange = (targetUser: any) => {
+    const roles = getAvailableRoles(targetUser);
+    const buttons: AlertButton[] = roles.map(role => ({
+        text: role === 'customer' ? 'Member' : role.charAt(0).toUpperCase() + role.slice(1),
+        onPress: () => updateRole(targetUser._id, role)
+      }));
+    
+    Alert.alert(
+      'Change Role',
+      `Change role for ${targetUser.name}:`,
+      buttons.concat([{ text: 'Cancel', style: 'cancel' }])
+    );
   };
 
   const canManageUser = (targetUser: any) => {
     if (currentUser?.role === 'admin') return true;
     if (currentUser?.role === 'manager') {
-      // Managers can only manage staff and customers
       return targetUser.role === 'staff' || targetUser.role === 'customer';
     }
     return false;
@@ -83,85 +109,76 @@ export function StaffManagement({ token, currentUser }: StaffManagementProps) {
       return ['customer', 'staff', 'manager', 'admin'];
     }
     if (currentUser?.role === 'manager') {
-      // Managers can only assign staff or customer roles
       return ['customer', 'staff'];
     }
     return [targetUser.role];
   };
 
-  if (loading) return <div className="p-12 text-center text-stone-400">Loading staff...</div>;
+  if (loading) return (
+    <View className="p-12 items-center">
+      <ActivityIndicator color="#57534e" />
+      <Text className="text-stone-400 mt-4">Loading staff...</Text>
+    </View>
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-stone-50 border-b border-stone-100">
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Member</th>
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Email</th>
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Role</th>
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-50">
-              {users.map((u: any) => (
-                <tr key={u._id} className="hover:bg-stone-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-stone-100 p-2 rounded-xl text-stone-600">
-                        <User size={18} />
-                      </div>
-                      <p className="text-sm font-black text-stone-800">
-                        {u.name} {u._id === currentUser?.id && <span className="text-[8px] bg-stone-800 text-white px-1.5 py-0.5 rounded ml-1 uppercase">You</span>}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-xs font-bold text-stone-500">
-                      <Mail size={14} className="text-stone-300" />
-                      {u.email}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <select 
-                        value={u.role}
-                        disabled={!canManageUser(u) || u._id === currentUser?.id}
-                        onChange={(e) => updateRole(u._id, e.target.value)}
-                        className={`text-[10px] font-black uppercase px-3 py-1 rounded-full border-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer disabled:cursor-not-allowed ${
-                          u.role === 'admin' ? 'bg-amber-100 text-amber-700' :
-                          u.role === 'manager' ? 'bg-purple-100 text-purple-700' :
-                          u.role === 'staff' ? 'bg-blue-100 text-blue-700' :
-                          'bg-stone-100 text-stone-700'
-                        }`}
-                      >
-                        {getAvailableRoles(u).map(role => (
-                          <option key={role} value={role}>{role === 'customer' ? 'Member' : role}</option>
-                        ))}
-                      </select>
-                      {u.role === 'admin' ? <ShieldCheck size={14} className="text-amber-500" /> : 
-                       u.role === 'manager' ? <ShieldAlert size={14} className="text-purple-500" /> :
-                       <Shield size={14} className="text-stone-300" />}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {canManageUser(u) && u._id !== currentUser?.id && (
-                      <button 
-                        onClick={() => deleteUser(u._id)}
-                        className="p-2 hover:bg-red-50 text-red-400 rounded-xl transition-colors"
-                        title="Remove Member"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+    <ScrollView className="flex-1 px-4 py-4 space-y-6">
+      <View className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden p-4">
+        {users.map((u: any) => (
+          <View key={u._id} className="bg-stone-50/50 p-5 rounded-3xl border border-stone-100 mb-4 shadow-sm">
+            <View className="flex-row justify-between items-start mb-4">
+              <View className="flex-row items-center gap-3">
+                <View className="bg-white p-2 rounded-xl border border-stone-100">
+                  <User size={18} color="#57534e" />
+                </View>
+                <View>
+                  <View className="flex-row items-center">
+                    <Text className="text-sm font-black text-stone-800">{u.name}</Text>
+                    {u._id === currentUser?.id && (
+                      <View className="bg-stone-800 px-1.5 py-0.5 rounded ml-2">
+                        <Text className="text-[8px] text-white font-black uppercase">You</Text>
+                      </View>
                     )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+                  </View>
+                  <View className="flex-row items-center gap-1 mt-1">
+                    <Mail size={12} color="#a8a29e" />
+                    <Text className="text-[10px] font-bold text-stone-400">{u.email}</Text>
+                  </View>
+                </View>
+              </View>
+              <TouchableOpacity 
+                onPress={() => handleRoleChange(u)}
+                disabled={!canManageUser(u) || u._id === currentUser?.id}
+                className={`px-3 py-1 rounded-full flex-row items-center gap-2 ${
+                u.role === 'admin' ? 'bg-amber-100' :
+                u.role === 'manager' ? 'bg-purple-100' :
+                u.role === 'staff' ? 'bg-blue-100' :
+                'bg-stone-100'
+              }`}>
+                <Text className={`text-[10px] font-black uppercase ${
+                  u.role === 'admin' ? 'text-amber-700' :
+                  u.role === 'manager' ? 'text-purple-700' :
+                  u.role === 'staff' ? 'text-blue-700' :
+                  'text-stone-700'
+                }`}>
+                  {u.role === 'customer' ? 'Member' : u.role}
+                </Text>
+                {u.role === 'admin' ? <ShieldCheck size={12} color="#f59e0b" /> : 
+                 u.role === 'manager' ? <ShieldAlert size={12} color="#a855f7" /> :
+                 <Shield size={12} color="#a8a29e" />}
+              </TouchableOpacity>
+            </View>
+
+            {canManageUser(u) && u._id !== currentUser?.id && (
+              <View className="flex-row justify-end pt-4 border-t border-stone-100">
+                <TouchableOpacity onPress={() => deleteUser(u._id)} className="p-2 bg-red-50 rounded-xl">
+                  <Trash2 size={18} color="#f87171" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }

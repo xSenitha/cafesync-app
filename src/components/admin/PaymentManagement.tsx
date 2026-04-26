@@ -1,5 +1,6 @@
-import { CreditCard, CheckCircle, Clock, Search, Filter, Download } from 'lucide-react';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { CreditCard, CheckCircle, Clock, Search, Filter, Download } from 'lucide-react-native';
 
 interface PaymentManagementProps {
   payments: any[];
@@ -16,114 +17,89 @@ export function PaymentManagement({ payments, token }: PaymentManagementProps) {
   );
 
   return (
-    <div className="space-y-8">
+    <ScrollView className="flex-1 space-y-6">
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-[2.5rem] border border-stone-100 shadow-sm">
-          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Total Revenue</p>
-          <p className="text-2xl font-black text-stone-800">
-            Rs. {payments.reduce((acc, p) => acc + p.amount, 0).toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-white p-6 rounded-[2.5rem] border border-stone-100 shadow-sm">
-          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Total Transactions</p>
-          <p className="text-2xl font-black text-stone-800">{payments.length}</p>
-        </div>
-        <div className="bg-white p-6 rounded-[2.5rem] border border-stone-100 shadow-sm">
-          <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">Avg. Transaction</p>
-          <p className="text-2xl font-black text-stone-800">
-            Rs. {payments.length > 0 ? Math.round(payments.reduce((acc, p) => acc + p.amount, 0) / payments.length).toLocaleString() : 0}
-          </p>
-        </div>
-      </div>
+      <View className="flex-row flex-wrap gap-4">
+        {[
+          { label: 'Total Revenue', value: `Rs. ${payments.reduce((acc, p) => acc + p.amount, 0).toLocaleString()}` },
+          { label: 'Transactions', value: payments.length },
+          { label: 'Avg. Transaction', value: `Rs. ${payments.length > 0 ? Math.round(payments.reduce((acc, p) => acc + p.amount, 0) / payments.length).toLocaleString() : 0}` }
+        ].map((stat, idx) => (
+          <View key={idx} className="w-[47%] bg-white p-6 rounded-[2rem] border border-stone-100 shadow-sm">
+            <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-1">{stat.label}</Text>
+            <Text className="text-xl font-black text-stone-800">{stat.value}</Text>
+          </View>
+        ))}
+      </View>
 
       {/* Filters & Search */}
-      <div className="bg-white p-4 rounded-[2rem] border border-stone-100 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="relative w-full sm:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
-          <input 
-            type="text"
-            placeholder="Search by Order ID, Method or Amount..."
+      <View className="bg-white p-4 rounded-[2rem] border border-stone-100 shadow-sm space-y-4">
+        <View className="relative">
+          <View className="absolute left-4 top-[14px] z-10">
+            <Search size={18} color="#a8a29e" />
+          </View>
+          <TextInput 
+            className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold"
+            placeholder="Search payments..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-stone-50 border border-stone-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+            onChangeText={setSearchTerm}
           />
-        </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-stone-50 text-stone-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-stone-100 transition-all">
-            <Filter size={16} />
-            Filter
-          </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-stone-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-stone-900/10">
-            <Download size={16} />
-            Export
-          </button>
-        </div>
-      </div>
+        </View>
+        <View className="flex-row gap-3">
+          <TouchableOpacity className="flex-1 flex-row items-center justify-center gap-2 px-6 py-3 bg-stone-50 rounded-2xl">
+            <Filter size={16} color="#57534e" />
+            <Text className="text-stone-600 text-xs font-black uppercase tracking-widest">Filter</Text>
+          </TouchableOpacity>
+          <TouchableOpacity className="flex-1 flex-row items-center justify-center gap-2 px-6 py-3 bg-stone-900 rounded-2xl">
+            <Download size={16} color="white" />
+            <Text className="text-white text-xs font-black uppercase tracking-widest">Export</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      {/* Payments Table */}
-      <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-stone-50 border-b border-stone-100">
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Transaction</th>
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Order Details</th>
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Method</th>
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Amount</th>
-                <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-50">
-              {filteredPayments.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
-                    <div className="bg-stone-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-300">
-                      <CreditCard size={32} />
-                    </div>
-                    <p className="text-stone-400 text-xs font-bold uppercase tracking-widest">No transactions found</p>
-                  </td>
-                </tr>
-              ) : (
-                filteredPayments.map((payment: any) => (
-                  <tr key={payment._id} className="hover:bg-stone-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="text-xs font-bold text-stone-800">#{payment._id.slice(-6).toUpperCase()}</p>
-                      <p className="text-[10px] font-medium text-stone-400">{new Date(payment.paidAt || payment.createdAt).toLocaleString()}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-stone-800">Order #{payment.orderId?._id?.slice(-6).toUpperCase() || 'N/A'}</p>
-                      <p className="text-[10px] font-medium text-stone-400">
-                        {payment.orderId?.customerName || `Table ${payment.orderId?.tableNumber || '?'}`}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-stone-100 rounded-lg text-stone-600">
-                          <CreditCard size={14} />
-                        </div>
-                        <span className="text-xs font-bold text-stone-600">{payment.paymentMethod}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-black text-stone-800">Rs. {payment.amount.toLocaleString()}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
-                        payment.status === 'Completed' ? 'bg-emerald-100 text-emerald-700' : 
-                        payment.status === 'Failed' ? 'bg-red-100 text-red-700' : 
-                        'bg-amber-100 text-amber-700'
-                      }`}>
-                        {payment.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      {/* Payments List */}
+      <View className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden mb-10">
+        <View className="bg-stone-50 px-6 py-4 border-b border-stone-100">
+          <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Recent Transactions</Text>
+        </View>
+        <View className="divide-y divide-stone-50">
+          {filteredPayments.length === 0 ? (
+            <View className="py-12 items-center">
+              <View className="bg-stone-50 w-16 h-16 rounded-full items-center justify-center mb-4">
+                <CreditCard size={32} color="#e7e5e4" />
+              </View>
+              <Text className="text-stone-400 text-xs font-bold uppercase tracking-widest">No transactions found</Text>
+            </View>
+          ) : (
+            filteredPayments.map((payment: any) => (
+              <View key={payment._id} className="px-6 py-5 flex-row items-center justify-between">
+                <View className="flex-1">
+                  <Text className="text-sm font-black text-stone-800">Order #{payment.orderId?._id?.slice(-6).toUpperCase() || 'N/A'}</Text>
+                  <Text className="text-[10px] font-medium text-stone-400 mt-0.5">{new Date(payment.paidAt || payment.createdAt).toLocaleDateString()}</Text>
+                  <View className="flex-row items-center gap-2 mt-1.5">
+                    <View className="p-1.5 bg-stone-100 rounded-lg">
+                      <CreditCard size={10} color="#57534e" />
+                    </View>
+                    <Text className="text-[10px] font-bold text-stone-500 uppercase">{payment.paymentMethod}</Text>
+                  </View>
+                </View>
+                <View className="items-end">
+                  <Text className="text-lg font-black text-stone-800">Rs. {payment.amount.toLocaleString()}</Text>
+                  <View className={`mt-1.5 px-3 py-1 rounded-full ${
+                    payment.status === 'Completed' ? 'bg-emerald-100' : 
+                    payment.status === 'Failed' ? 'bg-red-100' : 'bg-amber-100'
+                  }`}>
+                    <Text className={`text-[8px] font-black uppercase ${
+                      payment.status === 'Completed' ? 'text-emerald-700' : 
+                      payment.status === 'Failed' ? 'text-red-700' : 'text-amber-700'
+                    }`}>{payment.status}</Text>
+                  </View>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      </View>
+    </ScrollView>
   );
 }

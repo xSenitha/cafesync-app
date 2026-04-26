@@ -15,12 +15,21 @@
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "nativewind",
     "paths": {
       "@/*": [
         "./*"
       ]
     },
     "allowImportingTsExtensions": true,
-    "noEmit": true
-  }
+    "noEmit": true,
+    "types": ["nativewind/types"]
+  },
+  "include": [
+    "src",
+    "server",
+    "*.ts",
+    "*.tsx",
+    "nativewind-env.d.ts"
+  ]
 }

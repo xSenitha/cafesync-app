@@ -7,6 +7,9 @@ const getBaseUrl = () => {
     
     // Local PC Browser (Development)
     if (origin.includes('localhost:3000')) return 'http://localhost:3000';
+    
+    // Fallback to relative path for any other same-origin setup
+    return origin;
   }
   
   // For Mobile (Capacitor) and any other production environment
@@ -14,4 +17,7 @@ const getBaseUrl = () => {
 };
 
 export const API_BASE_URL = getBaseUrl();
-console.log('Connecting to Backend at:', API_BASE_URL);
+if (typeof window !== 'undefined') {
+  console.log('CafeSync: Current Origin:', window.location.origin);
+  console.log('CafeSync: API Base URL:', API_BASE_URL);
+}

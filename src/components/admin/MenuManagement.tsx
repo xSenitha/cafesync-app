@@ -1,5 +1,5 @@
-import { motion } from 'motion/react';
-import { Coffee, Trash2, Edit3 } from 'lucide-react';
+import { View, Text, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { Coffee, Trash2, Edit3 } from 'lucide-react-native';
 import { API_BASE_URL } from '../../config';
 
 interface MenuManagementProps {
@@ -7,73 +7,88 @@ interface MenuManagementProps {
   token: string | null;
   onUpdateMenu: () => void;
   onEditItem: (item: any) => void;
+  user?: any;
 }
 
-export function MenuManagement({ menuItems, token, onUpdateMenu, onEditItem }: MenuManagementProps) {
+export function MenuManagement({ menuItems, token, onUpdateMenu, onEditItem, user }: MenuManagementProps) {
   const handleDelete = async (itemId: string) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/menu/${itemId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        onUpdateMenu();
-      }
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
+    Alert.alert(
+      'Delete Item',
+      'Are you sure you want to delete this item?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/api/menu/${itemId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (res.ok) {
+                onUpdateMenu();
+              }
+            } catch (err) {
+              console.error('Delete error:', err);
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-      {menuItems.map((item: any) => (
-        <motion.div 
-          layout
-          key={item._id} 
-          className="bg-white p-5 rounded-[2rem] border border-stone-100 shadow-sm hover:shadow-xl hover:shadow-stone-200/50 transition-all group"
-        >
-          <div className="relative h-48 mb-4 overflow-hidden rounded-2xl bg-stone-100">
-            {item.imageUrl ? (
-              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-stone-300">
-                <Coffee size={48} strokeWidth={1.5} />
-              </div>
-            )}
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-black text-stone-800 shadow-sm">
-              {item.category}
-            </div>
-          </div>
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-black text-stone-800">{item.name}</h3>
-            <p className="text-lg font-black text-amber-700">Rs. {item.price}</p>
-          </div>
-          <p className="text-xs text-stone-400 font-medium line-clamp-2 mb-4 h-8">{item.description}</p>
-          <div className="flex items-center justify-between pt-4 border-t border-stone-50">
-            <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${item.stockQuantity > (item.lowStockThreshold || 10) ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">{item.stockQuantity} in stock</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => onEditItem(item)}
-                className="text-stone-400 hover:text-amber-700 transition-colors"
-              >
-                <Edit3 size={18} />
-              </button>
-              {(token && JSON.parse(atob(token.split('.')[1])).role !== 'staff') && (
-                <button 
-                  onClick={() => handleDelete(item._id)}
-                  className="text-stone-400 hover:text-red-500 transition-colors"
-                >
-                  <Trash2 size={18} />
-                </button>
+    <ScrollView className="flex-1 px-4">
+      <View className="flex-row flex-wrap gap-4 justify-between">
+        {menuItems.map((item: any) => (
+          <View 
+            key={item._id} 
+            className="bg-white p-5 rounded-[2rem] border border-stone-100 shadow-sm w-[48%] mb-4"
+          >
+            <View className="relative h-32 mb-4 overflow-hidden rounded-2xl bg-stone-100 items-center justify-center">
+              {item.imageUrl ? (
+                <Image 
+                  source={{ uri: item.imageUrl }} 
+                  className="w-full h-full"
+                  resizeMode="cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <Coffee size={32} color="#d6d3d1" strokeWidth={1.5} />
               )}
-            </div>
-          </div>
-        </motion.div>
-      ))}
-    </div>
+              <View className="absolute top-2 right-2 bg-white/90 px-2 py-0.5 rounded-full shadow-sm">
+                <Text className="text-[8px] font-black text-stone-800 uppercase">{item.category}</Text>
+              </View>
+            </View>
+            
+            <View className="flex-row justify-between items-start mb-1">
+              <Text className="text-sm font-black text-stone-800 flex-1 mr-1" numberOfLines={1}>{item.name}</Text>
+            </View>
+            <Text className="text-xs font-black text-amber-700 mb-2">Rs. {item.price}</Text>
+            
+            <Text className="text-[10px] text-stone-400 font-medium h-8 mb-4" numberOfLines={2}>{item.description}</Text>
+            
+            <View className="flex-row items-center justify-between pt-3 border-t border-stone-50">
+              <View className="flex-row items-center gap-1.5">
+                <View className={`w-1.5 h-1.5 rounded-full ${item.stockQuantity > (item.lowStockThreshold || 10) ? 'bg-emerald-500' : 'bg-red-500'}`}></View>
+                <Text className="text-[8px] font-bold text-stone-500 uppercase tracking-wider">{item.stockQuantity}</Text>
+              </View>
+              <View className="flex-row items-center gap-3">
+                <TouchableOpacity onPress={() => onEditItem(item)}>
+                  <Edit3 size={16} color="#a8a29e" />
+                </TouchableOpacity>
+                {user?.role !== 'staff' && (
+                  <TouchableOpacity onPress={() => handleDelete(item._id)}>
+                    <Trash2 size={16} color="#f87171" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
+

@@ -1,5 +1,5 @@
-import { motion } from 'motion/react';
-import { Coffee, LogIn, AlertCircle, CheckCircle } from 'lucide-react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { Coffee, LogIn, AlertCircle, CheckCircle } from 'lucide-react-native';
 
 interface AuthProps {
   name: string;
@@ -20,91 +20,92 @@ export function Auth({
   loading, error, success, handleLogin, handleRegister 
 }: AuthProps) {
   return (
-    <div className="max-w-md mx-auto mt-12 sm:mt-20">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-stone-200/50 border border-stone-100"
-      >
-        <div className="text-center mb-10">
-          <div className="inline-flex bg-amber-50 p-4 rounded-3xl text-amber-700 mb-4">
-            <Coffee size={32} />
-          </div>
-          <h2 className="text-3xl font-black text-stone-800">Welcome Back</h2>
-          <p className="text-stone-400 text-sm mt-2">Manage your cafe with precision and ease.</p>
-        </div>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-4 py-12">
+      <View className="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-stone-100">
+        <View className="items-center mb-10">
+          <View className="bg-amber-50 p-4 rounded-3xl mb-4">
+            <Coffee size={32} color="#b45309" />
+          </View>
+          <Text className="text-3xl font-black text-stone-800 text-center">Welcome Back</Text>
+          <Text className="text-stone-400 text-sm mt-2 text-center">Manage your cafe with precision and ease.</Text>
+        </View>
         
         {error && (
-          <motion.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-xs font-bold rounded-2xl flex items-center gap-3"
-          >
-            <AlertCircle size={18} />
-            {error}
-          </motion.div>
+          <View className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex-row items-center gap-3">
+            <AlertCircle size={18} color="#ef4444" />
+            <Text className="text-red-600 text-xs font-bold flex-1">{error}</Text>
+          </View>
         )}
 
         {success && (
-          <motion.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="mb-6 p-4 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-bold rounded-2xl flex items-center gap-3"
-          >
-            <CheckCircle size={18} />
-            {success}
-          </motion.div>
+          <View className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex-row items-center gap-3">
+            <CheckCircle size={18} color="#10b981" />
+            <Text className="text-emerald-600 text-xs font-bold flex-1">{success}</Text>
+          </View>
         )}
 
-        <div className="space-y-5">
-          <div className="group">
-            <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
-            <input 
-              type="text" 
+        <View className="space-y-5">
+          <View>
+            <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2 ml-1">Full Name</Text>
+            <TextInput 
               value={name} 
-              onChange={(e) => setName(e.target.value)}
+              onChangeText={setName}
               placeholder="Your Name"
-              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium text-stone-800"
+              placeholderTextColor="#d6d3d1"
+              className="w-full px-5 py-4 rounded-2xl border border-stone-100 bg-stone-50/50 text-stone-800 font-medium"
             />
-          </div>
-          <div>
-            <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
-            <input 
-              type="email" 
+          </View>
+          <View>
+            <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2 ml-1">Email Address</Text>
+            <TextInput 
               value={email} 
-              onChange={(e) => setEmail(e.target.value)}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
               placeholder="Your Email"
-              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium text-stone-800"
+              placeholderTextColor="#d6d3d1"
+              className="w-full px-5 py-4 rounded-2xl border border-stone-100 bg-stone-50/50 text-stone-800 font-medium"
             />
-          </div>
-          <div>
-            <label className="block text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2 ml-1">Password</label>
-            <input 
-              type="password" 
+          </View>
+          <View>
+            <Text className="text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2 ml-1">Password</Text>
+            <TextInput 
               value={password} 
-              onChange={(e) => setPassword(e.target.value)}
+              onChangeText={setPassword}
+              secureTextEntry
               placeholder="••••••••"
-              className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all placeholder:text-stone-300 font-medium text-stone-800"
+              placeholderTextColor="#d6d3d1"
+              className="w-full px-5 py-4 rounded-2xl border border-stone-100 bg-stone-50/50 text-stone-800 font-medium"
             />
-          </div>
-          <div className="flex flex-col gap-3 pt-4">
-            <button 
-              onClick={handleLogin}
+          </View>
+          <View className="gap-3 pt-4">
+            <TouchableOpacity 
+              onPress={handleLogin}
               disabled={loading}
-              className="w-full bg-stone-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xl shadow-stone-900/10 active:scale-[0.98]"
+              className={`w-full bg-stone-900 h-16 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl shadow-stone-900/10 ${loading ? 'opacity-50' : ''}`}
             >
-              {loading ? 'Authenticating...' : <><LogIn size={18} strokeWidth={2.5} /> Sign In</>}
-            </button>
-            <button 
-              onClick={handleRegister}
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <LogIn size={18} color="white" strokeWidth={2.5} />
+                  <Text className="text-white font-bold">Sign In</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={handleRegister}
               disabled={loading}
-              className="w-full bg-white text-stone-900 border-2 border-stone-100 font-bold py-4 rounded-2xl hover:bg-stone-50 transition-all disabled:opacity-50 active:scale-[0.98]"
+              className={`w-full bg-white h-16 border-2 border-stone-100 rounded-2xl items-center justify-center ${loading ? 'opacity-50' : ''}`}
             >
-              {loading ? 'Creating Account...' : 'Create New Account'}
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+              <Text className="text-stone-900 font-bold">
+                {loading ? 'Creating Account...' : 'Create New Account'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
+

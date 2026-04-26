@@ -1,5 +1,6 @@
 import React from 'react';
-import { Calendar, Users, Clock, CheckCircle, XCircle, Phone, User, Trash2, Edit2, Save, X } from 'lucide-react';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { Calendar, Users, Clock, CheckCircle, XCircle, Phone, User, Trash2, Edit2, Save, X } from 'lucide-react-native';
 import { API_BASE_URL } from '../../config';
 
 interface ReservationManagementProps {
@@ -36,24 +37,36 @@ export function ReservationManagement({ reservations, orders, tables, token, onU
   };
 
   const deleteReservation = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this reservation?')) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/reservations/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    Alert.alert(
+      'Delete Reservation',
+      'Are you sure you want to delete this reservation?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/api/reservations/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              if (res.ok) {
+                onUpdate();
+              }
+            } catch (err) {
+              console.error('Delete reservation error:', err);
+            }
+          }
         }
-      });
-      if (res.ok) {
-        onUpdate();
-      }
-    } catch (err) {
-      console.error('Delete reservation error:', err);
-    }
+      ]
+    );
   };
 
-  const addTable = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const addTable = async () => {
+    if (!newTableNumber || !newTableCapacity) return;
     try {
       const res = await fetch(`${API_BASE_URL}/api/tables`, {
         method: 'POST',
@@ -76,20 +89,32 @@ export function ReservationManagement({ reservations, orders, tables, token, onU
   };
 
   const deleteTable = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this table?')) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/tables/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+    Alert.alert(
+      'Delete Table',
+      'Are you sure you want to delete this table?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/api/tables/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              if (res.ok) {
+                onUpdate();
+              }
+            } catch (err) {
+              console.error('Delete table error:', err);
+            }
+          }
         }
-      });
-      if (res.ok) {
-        onUpdate();
-      }
-    } catch (err) {
-      console.error('Delete table error:', err);
-    }
+      ]
+    );
   };
 
   const updateTableStatus = async (id: string, status: string) => {
@@ -139,319 +164,247 @@ export function ReservationManagement({ reservations, orders, tables, token, onU
   };
 
   const getTableStatus = (table: any) => {
-    // Manual status override if set
     if (table.status && table.status !== 'Available') return table.status;
-
     const num = table.number;
     const hasActiveOrder = orders.some(o => 
       o && o.tableNumber === num && 
       ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
     );
     if (hasActiveOrder) return 'Occupied';
-
     const now = new Date();
     const hasReservation = reservations.some(r => {
       if (!r || r.tableNumber !== num || r.status === 'Cancelled' || r.status === 'Completed') return false;
       const resTime = new Date(r.reservationTime);
       const diffMs = Math.abs(now.getTime() - resTime.getTime());
       const diffHours = diffMs / (1000 * 60 * 60);
-      return diffHours < 2; // Within 2 hours
+      return diffHours < 2;
     });
     if (hasReservation) return 'Reserved';
-
     return 'Available';
   };
 
+  const handleStatusChange = (table: any) => {
+    Alert.alert(
+      'Set Table Status',
+      `Table ${table.number} - Choose status:`,
+      [
+        { text: 'Available', onPress: () => updateTableStatus(table._id, 'Available') },
+        { text: 'Occupied', onPress: () => updateTableStatus(table._id, 'Occupied') },
+        { text: 'Reserved', onPress: () => updateTableStatus(table._id, 'Reserved') },
+        { text: 'Cleaning', onPress: () => updateTableStatus(table._id, 'Cleaning') },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
   return (
-    <div className="space-y-8">
+    <ScrollView className="flex-1 px-4 py-4 space-y-8">
       {/* Table Management Section */}
-      <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-stone-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h3 className="text-xl font-black text-stone-800">Table Layout</h3>
-            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Manage restaurant seating capacity</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-500" />
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Available</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-500" />
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Occupied</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500" />
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Reserved</span>
-            </div>
-          </div>
-          <form onSubmit={addTable} className="flex flex-wrap items-center gap-3 bg-stone-50 p-2 rounded-2xl border border-stone-100">
-            <div className="flex items-center gap-2 px-3">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Table</span>
-              <input 
-                type="number"
-                placeholder="#"
+      <View className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden mb-8">
+        <View className="p-8 border-b border-stone-100">
+          <Text className="text-xl font-black text-stone-800">Table Layout</Text>
+          <Text className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Manage restaurant seating</Text>
+          
+          <View className="flex-row items-center gap-4 mt-4 flex-wrap">
+            <View className="flex-row items-center gap-2">
+              <View className="w-2 h-2 rounded-full bg-emerald-500" />
+              <Text className="text-[8px] font-black text-stone-400 uppercase">Available</Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              <View className="w-2 h-2 rounded-full bg-amber-500" />
+              <Text className="text-[8px] font-black text-stone-400 uppercase">Occupied</Text>
+            </View>
+            <View className="flex-row items-center gap-2">
+              <View className="w-2 h-2 rounded-full bg-blue-500" />
+              <Text className="text-[8px] font-black text-stone-400 uppercase">Reserved</Text>
+            </View>
+          </View>
+
+          <View className="flex-row items-center gap-3 bg-stone-50 p-2 rounded-2xl border border-stone-100 mt-6">
+            <View className="flex-1 flex-row items-center gap-2 px-3">
+              <Text className="text-[8px] font-black text-stone-400 uppercase">#</Text>
+              <TextInput 
                 value={newTableNumber}
-                onChange={(e) => setNewTableNumber(e.target.value)}
-                className="w-16 bg-transparent border-none p-0 text-sm font-black text-stone-800 focus:ring-0"
-                required
+                onChangeText={setNewTableNumber}
+                placeholder="Table"
+                keyboardType="numeric"
+                className="flex-1 p-0 text-sm font-black text-stone-800"
               />
-            </div>
-            <div className="w-px h-8 bg-stone-200" />
-            <div className="flex items-center gap-2 px-3">
-              <Users size={14} className="text-stone-400" />
-              <input 
-                type="number"
-                placeholder="Seats"
+            </View>
+            <View className="w-px h-6 bg-stone-200" />
+            <View className="flex-1 flex-row items-center gap-2 px-3">
+              <Users size={12} color="#a8a29e" />
+              <TextInput 
                 value={newTableCapacity}
-                onChange={(e) => setNewTableCapacity(e.target.value)}
-                className="w-16 bg-transparent border-none p-0 text-sm font-black text-stone-800 focus:ring-0"
-                required
+                onChangeText={setNewTableCapacity}
+                placeholder="Seats"
+                keyboardType="numeric"
+                className="flex-1 p-0 text-sm font-black text-stone-800"
               />
-            </div>
-            <button 
-              type="submit"
-              className="bg-stone-900 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-lg shadow-stone-900/10"
+            </View>
+            <TouchableOpacity 
+              onPress={addTable}
+              className="bg-stone-900 px-4 py-2 rounded-xl"
             >
-              Add Table
-            </button>
-          </form>
-        </div>
+              <Text className="text-white text-[10px] font-black uppercase">Add</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <div className="p-8 bg-stone-50/30">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
-            {tables.map((table) => {
-              const status = getTableStatus(table);
-              const isEditing = editingTable === table._id;
+        <View className="p-4 flex-row flex-wrap gap-3">
+          {tables.map((table) => {
+            const status = getTableStatus(table);
+            const isEditing = editingTable === table._id;
 
-              return (
-                <div key={table._id} className={`group relative bg-white border rounded-2xl p-5 flex flex-col items-center gap-1 shadow-sm hover:shadow-md transition-all ${
-                  status === 'Occupied' ? 'border-amber-200 bg-amber-50/10' : 
-                  status === 'Reserved' ? 'border-blue-200 bg-blue-50/10' : 
-                  status === 'Cleaning' ? 'border-purple-200 bg-purple-50/10' :
-                  'border-stone-100'
-                }`}>
-                  {isEditing ? (
-                    <div className="flex flex-col items-center gap-2 w-full">
-                      <div className="flex items-center gap-1 bg-stone-50 p-1 rounded-lg border border-stone-100 w-full">
-                        <span className="text-[8px] font-black text-stone-400 uppercase ml-1">#</span>
-                        <input 
-                          type="number"
-                          value={editNumber}
-                          onChange={(e) => setEditNumber(e.target.value)}
-                          className="w-full bg-transparent border-none p-0 text-sm font-black text-stone-800 focus:ring-0 text-center"
-                        />
-                      </div>
-                      <div className="flex items-center gap-1 bg-stone-50 p-1 rounded-lg border border-stone-100 w-full">
-                        <Users size={10} className="text-stone-400 ml-1" />
-                        <input 
-                          type="number"
-                          value={editCapacity}
-                          onChange={(e) => setEditCapacity(e.target.value)}
-                          className="w-full bg-transparent border-none p-0 text-sm font-black text-stone-800 focus:ring-0 text-center"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <button 
-                          onClick={() => updateTable(table._id)}
-                          className="p-1.5 bg-stone-900 text-white rounded-lg hover:bg-black transition-colors"
-                        >
-                          <Save size={12} />
-                        </button>
-                        <button 
-                          onClick={() => setEditingTable(null)}
-                          className="p-1.5 bg-stone-100 text-stone-500 rounded-lg hover:bg-stone-200 transition-colors"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-1 transition-colors ${
-                        status === 'Occupied' ? 'bg-amber-100 text-amber-600' : 
-                        status === 'Reserved' ? 'bg-blue-100 text-blue-600' : 
-                        status === 'Cleaning' ? 'bg-purple-100 text-purple-600' :
-                        'bg-stone-50 text-stone-800'
-                      }`}>
-                        <span className="text-xl font-black">{table.number}</span>
-                      </div>
-                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{table.capacity} Seats</span>
-                      
-                      <select 
-                        value={status}
-                        onChange={(e) => updateTableStatus(table._id, e.target.value)}
-                        className={`text-[9px] font-black uppercase tracking-tighter px-2 py-1 rounded-lg mt-2 border-none focus:ring-0 cursor-pointer shadow-sm ${
-                          status === 'Occupied' ? 'bg-amber-100 text-amber-700' : 
-                          status === 'Reserved' ? 'bg-blue-100 text-blue-700' : 
-                          status === 'Cleaning' ? 'bg-purple-100 text-purple-700' :
-                          'bg-emerald-100 text-emerald-700'
-                        }`}
-                      >
-                        <option value="Available">Available</option>
-                        <option value="Occupied">Occupied</option>
-                        <option value="Reserved">Reserved</option>
-                        <option value="Cleaning">Cleaning</option>
-                      </select>
-                      
-                      <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => startEditing(table)}
-                          className="text-stone-400 hover:text-amber-600 transition-colors p-1 bg-white rounded-full shadow-sm border border-stone-100"
-                          title="Edit Table"
-                        >
-                          <Edit2 size={12} />
-                        </button>
-                        <button 
-                          onClick={() => deleteTable(table._id)}
-                          className="text-stone-400 hover:text-red-500 transition-colors p-1 bg-white rounded-full shadow-sm border border-stone-100"
-                          title="Delete Table"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-            {tables.length === 0 && (
-              <div className="col-span-full py-12 text-center">
-                <div className="bg-stone-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-stone-300">
-                  <Users size={32} />
-                </div>
-                <p className="text-stone-400 text-[10px] font-black uppercase tracking-widest">No tables configured yet</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+            return (
+              <View key={table._id} className={`bg-white border rounded-2xl p-4 items-center gap-1 w-[22%] mb-2 ${
+                status === 'Occupied' ? 'border-amber-200' : 
+                status === 'Reserved' ? 'border-blue-200' : 
+                status === 'Cleaning' ? 'border-purple-200' :
+                'border-stone-100'
+              }`}>
+                {isEditing ? (
+                  <View className="items-center gap-2 w-full">
+                    <TextInput 
+                      value={editNumber}
+                      onChangeText={setEditNumber}
+                      keyboardType="numeric"
+                      className="w-full bg-stone-50 border border-stone-100 rounded-lg text-xs font-black text-center"
+                    />
+                    <View className="flex-row gap-2">
+                      <TouchableOpacity onPress={() => updateTable(table._id)} className="p-1.5 bg-stone-900 rounded-lg">
+                        <Save size={12} color="white" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => setEditingTable(null)} className="p-1.5 bg-stone-100 rounded-lg">
+                        <X size={12} color="#78716c" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <>
+                    <TouchableOpacity onPress={() => handleStatusChange(table)} className={`w-10 h-10 rounded-full items-center justify-center mb-1 ${
+                      status === 'Occupied' ? 'bg-amber-100' : 
+                      status === 'Reserved' ? 'bg-blue-100' : 
+                      status === 'Cleaning' ? 'bg-purple-100' :
+                      'bg-stone-50'
+                    }`}>
+                      <Text className="text-lg font-black">{table.number}</Text>
+                    </TouchableOpacity>
+                    <Text className="text-[8px] font-black text-stone-400 uppercase">{table.capacity} Seats</Text>
+                    
+                    <View className="flex-row gap-2 mt-2">
+                      <TouchableOpacity onPress={() => startEditing(table)}>
+                        <Edit2 size={10} color="#a8a29e" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => deleteTable(table._id)}>
+                        <Trash2 size={10} color="#f87171" />
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      </View>
 
       {/* Reservations List */}
-      <div className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-stone-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-xl font-black text-stone-800">Active Reservations</h3>
-            <p className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Monitor and manage guest bookings</p>
-          </div>
-          <div className="bg-stone-50 px-4 py-2 rounded-2xl border border-stone-100">
-            <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Total: </span>
-            <span className="text-sm font-black text-stone-800">{reservations.length}</span>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-stone-50 border-b border-stone-100">
-              <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Guest</th>
-              <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Details</th>
-              <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Schedule</th>
-              <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest">Status</th>
-              <th className="px-6 py-4 text-[10px] font-black text-stone-400 uppercase tracking-widest text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-stone-50">
-            {reservations.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-stone-400 font-medium">
-                  No reservations found.
-                </td>
-              </tr>
-            ) : (
-              reservations.map((res: any) => (
-                <tr key={res._id} className="hover:bg-stone-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-stone-100 p-2 rounded-xl text-stone-600">
-                        <User size={18} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-black text-stone-800">{res.customerName}</p>
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-stone-400">
-                          <Phone size={10} />
-                          {res.customerPhone}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs font-bold text-stone-600">
-                        <Users size={14} className="text-stone-400" />
-                        {res.numberOfGuests} Guests
-                      </div>
-                      <div className="text-[10px] font-black text-amber-700 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded-md inline-block">
-                        Table #{res.tableNumber}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs font-bold text-stone-800">
-                        <Calendar size={14} className="text-stone-400" />
-                        {new Date(res.reservationTime).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-stone-400 uppercase tracking-widest">
-                        <Clock size={14} className="text-stone-400" />
-                        {new Date(res.reservationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
-                      res.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-700' : 
-                      res.status === 'Cancelled' ? 'bg-red-100 text-red-700' : 
-                      res.status === 'Completed' ? 'bg-blue-100 text-blue-700' :
-                      'bg-amber-100 text-amber-700'
-                    }`}>
-                      {res.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {res.status === 'Pending' && (
-                        <button 
-                          onClick={() => updateStatus(res._id, 'Confirmed')}
-                          className="p-2 hover:bg-amber-50 text-amber-600 rounded-xl transition-colors"
-                          title="Confirm Reservation"
-                        >
-                          <CheckCircle size={18} />
-                        </button>
-                      )}
-                      {res.status === 'Confirmed' && (
-                        <button 
-                          onClick={() => updateStatus(res._id, 'Completed')}
-                          className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-colors"
-                          title="Mark Completed"
-                        >
-                          <CheckCircle size={18} />
-                        </button>
-                      )}
-                      {(res.status === 'Pending' || res.status === 'Confirmed') && (
-                        <button 
-                          onClick={() => updateStatus(res._id, 'Cancelled')}
-                          className="p-2 hover:bg-red-50 text-red-400 rounded-xl transition-colors"
-                          title="Cancel Reservation"
-                        >
-                          <XCircle size={18} />
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => deleteReservation(res._id)}
-                        className="p-2 hover:bg-red-100 text-red-600 rounded-xl transition-colors"
-                        title="Delete Reservation"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    </div>
+      <View className="bg-white rounded-[2.5rem] border border-stone-100 shadow-sm overflow-hidden mb-8">
+        <View className="p-8 border-b border-stone-100 flex-row items-center justify-between">
+          <View>
+            <Text className="text-xl font-black text-stone-800">Reservations</Text>
+            <Text className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-1">Guest bookings</Text>
+          </View>
+          <View className="bg-stone-50 px-3 py-1 rounded-full border border-stone-100">
+            <Text className="text-sm font-black text-stone-800">{reservations.length}</Text>
+          </View>
+        </View>
+
+        <View className="p-4">
+          {reservations.map((res: any) => (
+            <View key={res._id} className="bg-stone-50/50 p-5 rounded-3xl border border-stone-100 mb-4 shadow-sm">
+              <View className="flex-row justify-between items-start mb-4">
+                <View className="flex-row items-center gap-3">
+                  <View className="bg-white p-2 rounded-xl border border-stone-100">
+                    <User size={18} color="#57534e" />
+                  </View>
+                  <View>
+                    <Text className="text-sm font-black text-stone-800">{res.customerName}</Text>
+                    <View className="flex-row items-center gap-1">
+                      <Phone size={10} color="#a8a29e" />
+                      <Text className="text-[10px] font-bold text-stone-400">{res.customerPhone}</Text>
+                    </View>
+                  </View>
+                </View>
+                <View className={`px-2 py-1 rounded-full ${
+                  res.status === 'Confirmed' ? 'bg-emerald-100' : 
+                  res.status === 'Cancelled' ? 'bg-red-100' : 
+                  res.status === 'Completed' ? 'bg-blue-100' :
+                  'bg-amber-100'
+                }`}>
+                  <Text className={`text-[8px] font-black uppercase ${
+                    res.status === 'Confirmed' ? 'text-emerald-700' : 
+                    res.status === 'Cancelled' ? 'text-red-700' : 
+                    res.status === 'Completed' ? 'text-blue-700' :
+                    'text-amber-700'
+                  }`}>
+                    {res.status}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row gap-4 mb-4">
+                <View className="flex-row items-center gap-1.5">
+                  <Users size={12} color="#a8a29e" />
+                  <Text className="text-[10px] font-bold text-stone-600">{res.numberOfGuests} Guests</Text>
+                </View>
+                <View className="bg-amber-50 px-2 py-0.5 rounded-md">
+                  <Text className="text-[8px] font-black text-amber-700 uppercase">Table #{res.tableNumber}</Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center gap-4 mb-4">
+                <View className="flex-row items-center gap-1.5">
+                  <Calendar size={12} color="#a8a29e" />
+                  <Text className="text-[10px] font-black text-stone-800">{new Date(res.reservationTime).toLocaleDateString()}</Text>
+                </View>
+                <View className="flex-row items-center gap-1.5">
+                  <Clock size={12} color="#a8a29e" />
+                  <Text className="text-[10px] font-black text-stone-800">
+                    {new Date(res.reservationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row justify-end gap-2 pt-4 border-t border-stone-100">
+                {res.status === 'Pending' && (
+                  <TouchableOpacity onPress={() => updateStatus(res._id, 'Confirmed')} className="p-2 bg-amber-50 rounded-xl">
+                    <CheckCircle size={18} color="#d97706" />
+                  </TouchableOpacity>
+                )}
+                {res.status === 'Confirmed' && (
+                  <TouchableOpacity onPress={() => updateStatus(res._id, 'Completed')} className="p-2 bg-emerald-50 rounded-xl">
+                    <CheckCircle size={18} color="#10b981" />
+                  </TouchableOpacity>
+                )}
+                {(res.status === 'Pending' || res.status === 'Confirmed') && (
+                  <TouchableOpacity onPress={() => updateStatus(res._id, 'Cancelled')} className="p-2 bg-red-50 rounded-xl">
+                    <XCircle size={18} color="#f87171" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => deleteReservation(res._id)} className="p-2 bg-stone-100 rounded-xl">
+                  <Trash2 size={18} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+          {reservations.length === 0 && (
+            <View className="py-12 items-center">
+              <Text className="text-stone-400 font-bold uppercase tracking-widest">No reservations</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </ScrollView>
   );
 }

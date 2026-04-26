@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'motion/react';
-import { X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { View, Text, TouchableOpacity, TextInput, Modal, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { X, Image as ImageIcon } from 'lucide-react-native';
 import { useState, useEffect } from 'react';
 
 interface AddItemModalProps {
@@ -36,8 +36,7 @@ export function AddItemModal({ isOpen, onClose, onSave, initialData }: AddItemMo
     }
   }, [initialData, isOpen]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!name || !price || !category) return;
 
     setLoading(true);
@@ -61,127 +60,106 @@ export function AddItemModal({ isOpen, onClose, onSave, initialData }: AddItemMo
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-          >
-            <div className="p-6 sm:p-8 border-b border-stone-100 flex justify-between items-center bg-stone-50/50">
-              <h3 className="text-xl font-black text-stone-800">Add New Menu Item</h3>
-              <button onClick={onClose} className="p-2 hover:bg-stone-200 rounded-xl transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Item Name</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g. Cappuccino" 
-                    className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all font-medium" 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Price (Rs.)</label>
-                  <input 
-                    required
-                    type="number" 
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="0.00" 
-                    className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all font-medium" 
-                  />
-                </div>
-              </div>
+    <Modal
+      visible={isOpen}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 justify-end bg-black/40">
+        <View className="bg-white rounded-t-[3rem] max-h-[90%]">
+          <View className="p-8 border-b border-stone-100 flex-row justify-between items-center">
+            <Text className="text-xl font-black text-stone-800">New Item</Text>
+            <TouchableOpacity onPress={onClose} className="p-2 bg-stone-100 rounded-xl">
+              <X size={20} color="#57534e" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView className="p-8 space-y-6">
+            <View className="flex-row gap-4">
+              <View className="flex-1 space-y-2">
+                <Text className="text-[10px] font-black text-stone-400 uppercase">Name</Text>
+                <TextInput 
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="e.g. Latte" 
+                  className="bg-stone-50 px-5 py-4 rounded-2xl border border-stone-100 font-bold"
+                />
+              </View>
+              <View className="w-32 space-y-2">
+                <Text className="text-[10px] font-black text-stone-400 uppercase">Price</Text>
+                <TextInput 
+                  value={price}
+                  onChangeText={setPrice}
+                  placeholder="0.00"
+                  keyboardType="numeric"
+                  className="bg-stone-50 px-5 py-4 rounded-2xl border border-stone-100 font-bold"
+                />
+              </View>
+            </View>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Category</label>
-                  <select 
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all font-medium appearance-none"
+            <View className="space-y-2">
+              <Text className="text-[10px] font-black text-stone-400 uppercase">Category</Text>
+              <View className="bg-stone-50 rounded-2xl border border-stone-100 p-1 flex-row flex-wrap">
+                {['Beverage', 'Appetizer', 'Main Course', 'Dessert'].map((cat) => (
+                  <TouchableOpacity 
+                    key={cat}
+                    onPress={() => setCategory(cat)}
+                    className={`px-4 py-2 rounded-xl mr-2 mb-2 ${category === cat ? 'bg-stone-900' : 'bg-transparent'}`}
                   >
-                    <option value="Beverage">Beverage</option>
-                    <option value="Appetizer">Appetizer</option>
-                    <option value="Main Course">Main Course</option>
-                    <option value="Dessert">Dessert</option>
-                    <option value="Snack">Snack</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Initial Stock</label>
-                  <input 
-                    type="number" 
-                    value={stockQuantity}
-                    onChange={(e) => setStockQuantity(e.target.value)}
-                    placeholder="50" 
-                    className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all font-medium" 
-                  />
-                </div>
-              </div>
+                    <Text className={`text-[10px] font-black uppercase ${category === cat ? 'text-white' : 'text-stone-400'}`}>
+                      {cat}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Image URL</label>
-                <div className="relative">
-                  <input 
-                    type="url" 
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/..." 
-                    className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all font-medium pr-12" 
-                  />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-300">
-                    <ImageIcon size={20} />
-                  </div>
-                </div>
-                {imageUrl && (
-                  <div className="mt-2 relative h-32 rounded-2xl overflow-hidden border border-stone-100 bg-stone-50">
-                    <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                      <span className="text-white text-[10px] font-black uppercase tracking-widest">Preview</span>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <View className="space-y-2">
+              <Text className="text-[10px] font-black text-stone-400 uppercase">Image URL</Text>
+              <View className="flex-row items-center bg-stone-50 rounded-2xl border border-stone-100 px-5">
+                <TextInput 
+                  value={imageUrl}
+                  onChangeText={setImageUrl}
+                  placeholder="https://..." 
+                  className="flex-1 py-4 font-bold"
+                />
+                <ImageIcon size={18} color="#d6d3d1" />
+              </View>
+              {imageUrl ? (
+                <View className="mt-2 h-40 rounded-2xl overflow-hidden bg-stone-50">
+                  <Image source={{ uri: imageUrl }} className="w-full h-full object-cover" />
+                </View>
+              ) : null}
+            </View>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest ml-1">Description</label>
-                <textarea 
-                  rows={3} 
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the item..." 
-                  className="w-full px-5 py-3.5 rounded-2xl border border-stone-100 bg-stone-50/50 focus:bg-white focus:outline-none focus:ring-4 focus:ring-amber-700/5 focus:border-amber-700 transition-all font-medium resize-none"
-                ></textarea>
-              </div>
+            <View className="space-y-2">
+              <Text className="text-[10px] font-black text-stone-400 uppercase">Description</Text>
+              <TextInput 
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                numberOfLines={3}
+                placeholder="Delicious coffee..." 
+                className="bg-stone-50 px-5 py-4 rounded-2xl border border-stone-100 font-bold h-24"
+                style={{ textAlignVertical: 'top' }}
+              />
+            </View>
 
-              <button 
-                type="submit"
-                disabled={loading}
-                className="w-full bg-stone-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-xl shadow-stone-900/10 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : 'Save Menu Item'}
-              </button>
-            </form>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+            <TouchableOpacity 
+              onPress={handleSubmit}
+              disabled={loading}
+              className="bg-stone-900 py-5 rounded-2xl shadow-xl shadow-stone-900/10 items-center justify-center mb-8"
+            >
+              {loading ? <ActivityIndicator color="white" /> : (
+                <Text className="text-white font-black uppercase tracking-widest text-sm">Save Menu Item</Text>
+              )}
+            </TouchableOpacity>
+            <View className="h-20" />
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
+

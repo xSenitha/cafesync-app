@@ -1,5 +1,5 @@
-import { motion } from 'motion/react';
-import { Star, MessageSquare, Calendar, User } from 'lucide-react';
+import { View, Text, ScrollView } from 'react-native';
+import { Star, MessageSquare, Calendar, User } from 'lucide-react-native';
 
 interface FeedbackManagementProps {
   feedback: any[];
@@ -11,76 +11,78 @@ export function FeedbackManagement({ feedback }: FeedbackManagementProps) {
     : 0;
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-black text-stone-800">Customer Feedback</h2>
-          <p className="text-stone-400 text-sm font-medium mt-1">Monitor customer satisfaction and reviews.</p>
-        </div>
-        <div className="bg-white px-6 py-4 rounded-3xl border border-stone-100 shadow-sm flex items-center gap-4">
-          <div className="bg-amber-50 p-3 rounded-2xl text-amber-600">
-            <Star size={24} fill="currentColor" />
-          </div>
-          <div>
-            <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Average Rating</p>
-            <p className="text-2xl font-black text-stone-800">{averageRating} / 5.0</p>
-          </div>
-        </div>
-      </div>
+    <ScrollView className="flex-1 px-4 py-4 space-y-8">
+      <View className="flex-row justify-between items-center mb-6">
+        <View className="flex-1">
+          <Text className="text-2xl font-black text-stone-800">Feedback</Text>
+          <Text className="text-stone-400 text-xs font-medium mt-1">Monitor satisfaction.</Text>
+        </View>
+        <View className="bg-white px-4 py-3 rounded-2xl border border-stone-100 shadow-sm flex-row items-center gap-4">
+          <View className="bg-amber-50 p-2 rounded-xl">
+            <Star size={20} color="#d97706" fill="#d97706" />
+          </View>
+          <View>
+            <Text className="text-[8px] font-black text-stone-400 uppercase tracking-widest">Avg</Text>
+            <Text className="text-lg font-black text-stone-800">{averageRating}</Text>
+          </View>
+        </View>
+      </View>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <View className="gap-6">
         {feedback.map((f) => (
-          <motion.div
-            layout
+          <View
             key={f._id}
-            className="bg-white rounded-[2.5rem] border border-stone-100 p-8 shadow-sm flex flex-col"
+            className="bg-white rounded-[2.5rem] border border-stone-100 p-6 shadow-sm mb-4"
           >
-            <div className="flex justify-between items-start mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-stone-50 rounded-2xl flex items-center justify-center text-stone-400">
-                  <User size={24} />
-                </div>
-                <div>
-                  <h3 className="font-black text-stone-800">{f.customerName || 'Anonymous'}</h3>
-                  <div className="flex items-center gap-1 mt-1">
+            <View className="flex-row justify-between items-start mb-6">
+              <View className="flex-row items-center gap-4">
+                <View className="w-10 h-10 bg-stone-50 rounded-xl flex items-center justify-center">
+                  <User size={20} color="#a8a29e" />
+                </View>
+                <View>
+                  <Text className="font-black text-stone-800">{f.customerName || 'Anonymous'}</Text>
+                  <View className="flex-row items-center gap-1 mt-1">
                     {[...Array(5)].map((_, i) => (
                       <Star 
                         key={i} 
-                        size={12} 
-                        fill={i < f.rating ? '#d97706' : 'none'} 
-                        className={i < f.rating ? 'text-amber-600' : 'text-stone-200'} 
+                        size={10} 
+                        color={i < f.rating ? '#d97706' : '#e7e5e4'}
+                        fill={i < f.rating ? '#d97706' : 'transparent'} 
                       />
                     ))}
-                  </div>
-                </div>
-              </div>
-              <div className="text-[10px] font-black text-stone-400 uppercase tracking-widest flex items-center gap-1">
-                <Calendar size={12} />
-                {new Date(f.createdAt).toLocaleDateString()}
-              </div>
-            </div>
+                  </View>
+                </View>
+              </View>
+              <View className="flex-row items-center gap-1">
+                <Calendar size={10} color="#a8a29e" />
+                <Text className="text-[8px] font-black text-stone-400 uppercase tracking-widest">
+                  {new Date(f.createdAt).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
 
-            <div className="bg-stone-50 p-6 rounded-3xl flex-1">
-              <div className="flex gap-3">
-                <MessageSquare size={18} className="text-stone-300 flex-shrink-0 mt-1" />
-                <p className="text-sm font-bold text-stone-600 leading-relaxed italic">
-                  "{f.comment || 'No comment provided.'}"
-                </p>
-              </div>
-            </div>
-          </motion.div>
+            <View className="bg-stone-50 p-4 rounded-2xl">
+              <View className="flex-row gap-2">
+                <MessageSquare size={14} color="#d6d3d1" />
+                <Text className="text-xs font-bold text-stone-600 leading-relaxed italic flex-1">
+                  "{f.comment || 'No comment.'}"
+                </Text>
+              </View>
+            </View>
+          </View>
         ))}
 
         {feedback.length === 0 && (
-          <div className="col-span-full bg-white p-20 rounded-[3rem] border border-stone-100 text-center">
-            <div className="bg-stone-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 text-stone-200">
-              <MessageSquare size={48} />
-            </div>
-            <h3 className="text-2xl font-black text-stone-800">No feedback yet</h3>
-            <p className="text-stone-400 font-medium">Customer reviews will appear here once they start coming in.</p>
-          </div>
+          <View className="bg-white p-12 rounded-[3rem] border border-stone-100 items-center">
+            <View className="bg-stone-50 w-16 h-16 rounded-full items-center justify-center mb-6">
+              <MessageSquare size={32} color="#e7e5e4" />
+            </View>
+            <Text className="text-xl font-black text-stone-800">No feedback yet</Text>
+            <Text className="text-stone-400 font-medium text-center mt-2">Customer reviews will appear here.</Text>
+          </View>
         )}
-      </div>
-    </div>
+      </View>
+    </ScrollView>
   );
 }
+
