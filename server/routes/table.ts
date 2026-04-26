@@ -1,14 +1,51 @@
 import express from 'express';
 import Table from '../models/Table.ts';
+import Order from '../models/Order.ts';
+import Reservation from '../models/Reservation.ts';
 import { protect, adminOnly, staffOrAbove } from '../middleware/auth.ts';
 
 const router = express.Router();
 
-// Get all tables
+// Get all tables with dynamic status
 router.get('/', async (req, res) => {
   try {
-    const tables = await Table.find().sort({ number: 1 });
-    res.json(tables);
+    const tables = await Table.find().sort({ number: 1 }).lean();
+    
+    // Get active orders
+    const activeOrders = await Order.find({
+      status: { $in: ['Pending', 'Preparing', 'Ready', 'Served'] }
+    });
+
+    // Get upcoming reservations (within 2 hours)
+    const now = new Date();
+    const TWO_HOURS = 2 * 60 * 60 * 1000;
+    const windowEnd = new Date(now.getTime() + TWO_HOURS);
+    const windowStart = new Date(now.getTime() - TWO_HOURS);
+
+    const activeReservations = await Reservation.find({
+      status: { $in: ['Pending', 'Confirmed'] },
+      reservationTime: { $gte: windowStart, $lte: windowEnd }
+    });
+
+    const tablesWithStatus = tables.map((table: any) => {
+      let currentStatus = table.status || 'Available';
+
+      // Order occupancy takes priority
+      const hasOrder = activeOrders.some(o => o.tableNumber === table.number);
+      if (hasOrder) {
+        currentStatus = 'Occupied';
+      } else {
+        // Check reservations
+        const hasRes = activeReservations.some(r => r.tableNumber === table.number);
+        if (hasRes) {
+          currentStatus = 'Reserved';
+        }
+      }
+
+      return { ...table, currentStatus };
+    });
+
+    res.json(tablesWithStatus);
   } catch (err: any) {
     res.status(500).json({ message: err.message });
   }

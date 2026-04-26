@@ -164,6 +164,7 @@ export function ReservationManagement({ reservations, orders, tables, token, onU
   };
 
   const getTableStatus = (table: any) => {
+    if (table.currentStatus) return table.currentStatus;
     if (table.status && table.status !== 'Available') return table.status;
     const num = table.number;
     const hasActiveOrder = orders.some(o => 

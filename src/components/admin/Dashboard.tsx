@@ -24,7 +24,9 @@ interface DashboardProps {
 export function Dashboard({ payments, orders, reservations, tables, menuItems, setActiveTab }: DashboardProps) {
   const lowStockItems = menuItems.filter(item => item.stockQuantity <= (item.lowStockThreshold || 10));
 
-  const getTableStatus = (num: number) => {
+  const getTableStatus = (table: any) => {
+    if (table.currentStatus) return table.currentStatus;
+    const num = table.number;
     const hasActiveOrder = orders.some(o => 
       o.tableNumber === num && 
       ['Pending', 'Preparing', 'Ready', 'Served'].includes(o.status)
@@ -165,7 +167,7 @@ export function Dashboard({ payments, orders, reservations, tables, menuItems, s
             </View>
             <View className="flex-row flex-wrap gap-3">
               {tables.map((table: any) => {
-                const status = getTableStatus(table.number);
+                const status = getTableStatus(table);
                 return (
                   <View 
                     key={table._id} 

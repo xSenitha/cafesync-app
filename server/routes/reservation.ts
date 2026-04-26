@@ -38,13 +38,40 @@ router.get('/my', protect, async (req: any, res) => {
 router.post('/', protect, async (req: any, res) => {
   try {
     const { customerName, customerPhone, tableNumber, numberOfGuests, reservationTime, notes } = req.body;
+    
+    // Convert to Date object
+    const requestedTime = new Date(reservationTime);
+    
+    // Check for past time
+    if (requestedTime < new Date()) {
+      return res.status(400).json({ message: 'Cannot reserve for a past time' });
+    }
+
+    // Check for overlapping reservations (2 hour window)
+    const TWO_HOURS = 2 * 60 * 60 * 1000;
+    const windowStart = new Date(requestedTime.getTime() - TWO_HOURS);
+    const windowEnd = new Date(requestedTime.getTime() + TWO_HOURS);
+
+    const overlap = await Reservation.findOne({
+      tableNumber,
+      status: { $in: ['Pending', 'Confirmed'] },
+      reservationTime: {
+        $gte: windowStart,
+        $lte: windowEnd
+      }
+    });
+
+    if (overlap) {
+      return res.status(400).json({ message: 'Table already reserved for this time period' });
+    }
+
     const newReservation = new Reservation({
       user: req.user._id,
       customerName,
       customerPhone,
       tableNumber,
       numberOfGuests,
-      reservationTime,
+      reservationTime: requestedTime,
       notes
     });
     await newReservation.save();

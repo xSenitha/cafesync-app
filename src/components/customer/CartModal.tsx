@@ -75,6 +75,7 @@ export function CartModal({ isOpen, onClose, cart, setCart, onPlaceOrder, reserv
 
   const getTableStatus = (num: number) => {
     const table = tables.find(t => t.number === num);
+    if (table && table.currentStatus) return table.currentStatus;
     if (table && table.status && table.status !== 'Available') return table.status;
 
     if (!orders || !Array.isArray(orders)) return 'Available';
