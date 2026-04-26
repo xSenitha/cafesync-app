@@ -56,19 +56,23 @@ export default function App() {
       const url = `${API_BASE_URL}/api/health`;
       try {
         const res = await fetch(url);
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Health check failed: ${res.status} ${res.statusText}`, text.substring(0, 100));
-          return;
+        if (res.ok) {
+          const data = await res.json();
+          setHealth(data);
+        } else {
+          console.warn(`⚠️ Health check: ${res.status} from ${url}`);
         }
-        const data = await res.json();
-        setHealth(data);
       } catch (err: any) {
-        console.error(`Health check error at ${url}:`, err.message);
+        console.warn(`⏳ Waiting for backend at ${url}...`);
       }
     };
+    
     checkHealth();
-  }, []);
+    const timer = setInterval(() => {
+      if (!health) checkHealth();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [health]);
 
   useEffect(() => {
     if (token) {
@@ -180,12 +184,15 @@ export default function App() {
     setSuccess(null);
     const url = `${API_BASE_URL}/api/auth/login`;
     const fullUrl = url.startsWith('http') ? url : window.location.origin + url;
-    console.log(`🌐 Fetching: ${fullUrl}`);
+    console.log(`🔑 Login Request: POST ${fullUrl}`);
     
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ email, password })
       });
       
@@ -194,8 +201,11 @@ export default function App() {
       try {
         data = JSON.parse(text);
       } catch (e) {
-        console.error(`Failed to parse response from ${fullUrl}:`, text.substring(0, 500));
-        throw new Error(`Server returned HTML instead of JSON. (URL: ${fullUrl})`);
+        console.error(`❌ Non-JSON response from ${fullUrl}:`, text.substring(0, 500));
+        if (text.toLowerCase().includes('<!doctype html>')) {
+          throw new Error('Server returned HTML (likely SPA fallback) instead of JSON. Check if the backend is running correctly at ' + fullUrl);
+        }
+        throw new Error('Invalid server response format.');
       }
 
       if (res.ok && data.token) {

@@ -1,25 +1,41 @@
 const getBaseUrl = () => {
+  // --- CONFIGURATION ---
+  // If your backend is NOT on the same domain as your frontend, 
+  // enter your backend URL here (e.g., 'https://your-api.up.railway.app')
+  const PRODUCTION_BACKEND_URL = 'https://cafesync-app-production.up.railway.app';
+  // ---------------------
+
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // In browser, relative path is safest for same-origin backend
-    // Only use full URL if we are running in a disconnected environment (like Capacitor)
-    // or if the user is explicitly developing on a different port than the backend
-    if (
-      hostname === 'localhost' || 
-      hostname === '127.0.0.1' ||
-      hostname.includes('.run.app') ||
-      hostname.includes('.railway.app') ||
-      hostname.includes('.up.railway.app')
-    ) {
-      return ''; 
+    // 1. AI Studio Preview (Same-origin)
+    if (hostname.includes('.run.app')) {
+      return '';
     }
     
-    return window.location.origin;
+    // 2. Local PC Development (using `npm run dev` on port 3000)
+    if ((hostname === 'localhost' || hostname === '127.0.0.1') && window.location.port === '3000') {
+      return '';
+    }
+
+    // 3. Railway (Same-origin)
+    if (hostname.includes('.railway.app')) {
+      return '';
+    }
+
+    // 4. Default for Web Apps (Same-origin)
+    // If you are browsing a website, relative path is usually best
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.startsWith('192.168.')) {
+      return '';
+    }
+    
+    // 5. Fallback for Mobile (Capacitor/Native) or Disconnected Previews
+    // If we're on localhost but NOT on port 3000, or we're on a local IP, 
+    // we should probably point to the production server.
+    return PRODUCTION_BACKEND_URL;
   }
   
-  // Fallback for SSR
-  return 'https://cafesync-app-production.up.railway.app';
+  return PRODUCTION_BACKEND_URL;
 };
 
 export const API_BASE_URL = getBaseUrl();

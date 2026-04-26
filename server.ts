@@ -114,7 +114,15 @@ async function startServer() {
 
   // 8. Start listener
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 CafeSync Server live at http://localhost:${PORT}`);
+    console.log(`
+  ================================================
+  🚀 CafeSync Server is LIVE!
+  📡 Port: ${PORT}
+  🌍 Mode: ${process.env.NODE_ENV || 'development'}
+  🔗 Local: http://localhost:${PORT}
+  🛠️  CORS: Configured for all origins
+  ================================================
+    `);
   });
 }
 
